@@ -154,7 +154,8 @@ else:
 
 plot_particleNum(fdata,turnIdxs)
 
-corr = []
+corrX = []
+corrY = []
 X = []
 XP = []
 Y = []
@@ -177,7 +178,8 @@ while True:
         print "Reached maxturn =", maxturn
         break
 
-    corr.append(np.corrcoef(tdata['z'], tdata['x'])[0,1])    
+    corrX.append(np.corrcoef(tdata['z'], tdata['x'])[0,1])    
+    corrY.append(np.corrcoef(tdata['z'], tdata['y'])[0,1])    
     
     for p in tdata:
         if p['ID'] == 1:
@@ -228,6 +230,17 @@ while True:
     plt.ylim(min(fdata[:]['x']),max(fdata[:]['x']))
 
     plt.savefig("pngs/zx_%05i.png" % (t))
+
+    plt.clf()
+    plt.title("TURN =" + str(t))
+    plt.scatter(tdata['z'], tdata['y'], c=tdata['ID'],cmap='rainbow',s=20)
+    plt.xlabel("z [mm]")
+    plt.ylabel("y [mm]")
+    plt.xlim(min(fdata[:]['z']),max(fdata[:]['z']))
+    plt.ylim(min(fdata[:]['y']),max(fdata[:]['y']))
+
+    plt.savefig("pngs/zy_%05i.png" % (t))
+
 
     plt.clf()
     plt.title("TURN =" + str(t))
@@ -300,6 +313,12 @@ print "Command = '" + command + "'"
 #os.system(command)
 print "Done."
 
+movieFileName = "pngs/zy.gif"
+command = "convert " + "pngs/zy_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
+print "Command = '" + command + "'"
+#os.system(command)
+print "Done."
+
 movieFileName = "pngs/zdEE.gif"
 command = "convert " + "pngs/zdEE_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
 print "Command = '" + command + "'"
@@ -308,9 +327,14 @@ print "Done."
 
 plt.figure(5) # To close the remains of per-timestep plots, reuse same plot #
 plt.clf()
-plt.plot(corr)
+plt.plot(corrX)
 plt.xlabel("Turn")
-plt.ylabel("Corr")
+plt.ylabel("Corr (x)")
+plt.figure(6)
+plt.plot(corrY)
+plt.xlabel("Turn")
+plt.ylabel("Corr (y)")
+
 
 (f,ax) = plt.subplots(2,2)
 
