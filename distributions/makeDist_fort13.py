@@ -3,7 +3,8 @@ import numpy as np
 
 npart = 64   #Number of particles to generate
              #Should be divisible by 2!
-machine = "LHC_design_coll"
+#machine = "LHC_design_coll"
+machine = "LHC_HL"
 
 if machine == "LHC_design_coll":
     E0    = 7e12 #[eV] Nominal beam energy
@@ -29,13 +30,13 @@ elif machine == "LHC_HL":
     epsx_n  = 2.5e-6 #[m*rad] Normalized emittance
     epsy_n  = 2.5e-6 #[m*rad] Normalized emittance
     
-    rmsZ  = 0.0755 #[m] RMS bunch length
-    rmsE  = 1.13   #    RMS energy spread
+    rmsZ  = 0.0755  #[m] RMS bunch length
+    rmsE  = 1.13e-4 #    RMS energy spread
     
     x0     = 0.0     #Orbit at injection point (x)
     y0     = 0.0     #Orbit at injection point (x)
     xcross = 0.0     #Crossing angle (x)
-    ycross = 590/2.0 #Crossing angle (y)
+    ycross = 590e-6/2.0 #Crossing angle (y)
 
 #General physics parameters
 mp = 938.272046e6 #proton mass, eV/c^2
@@ -106,7 +107,6 @@ z  [1:] = np.random.normal(loc=0,      scale=rmsZ,     size=npart-1)
 E  [1:] = np.random.normal(loc=E0,      scale=E0*rmsE, size=npart-1)
 p = np.sqrt((E-mp)*(E+mp))
 dPP = (p-p0)/p0
-print dPP
 
 #Write to file
 ofile = open("fort.13", 'w')
