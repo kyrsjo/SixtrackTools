@@ -139,6 +139,13 @@ if len(sys.argv) == 1:
     print "Usage: python plotDumpFile dumpfile (maxturn)"
     exit(1)
 
+if not os.path.isdir("pngs"):
+    if os.path.exists("pngs"):
+        print "Path 'pngs' exists but is not a folder - aborting!"
+        exit(1)
+    print "Creating folder 'pngs'"
+    os.mkdir("pngs")
+
 (fdata,turnIdxs) = readdumpfile(sys.argv[1])
 if len(sys.argv) == 3:
     maxturn = int(sys.argv[2])
