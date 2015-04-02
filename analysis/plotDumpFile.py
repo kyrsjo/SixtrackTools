@@ -204,7 +204,7 @@ while True:
 #            plt.hist(tdata[v])
 #            plt.xlabel(v)
 #            plt.title("First turn distribution; mean=%f, rms=%f" % (np.mean(tdata[v]), np.std(tdata[v])))
-            print "First turn distribution of %s; mean=%f, rms=%f" % (v,np.mean(tdata[v]), np.std(tdata[v]))
+            print "First turn distribution of %s; N=%i, mean=%f, rms=%f" % (v,len(tdata), np.mean(tdata[v]), np.std(tdata[v]))
 
     #Check if ID is "unbroken" or not
     if len(tdata) != 64:
