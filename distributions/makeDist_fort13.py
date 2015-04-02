@@ -1,6 +1,14 @@
 #!/usr/bin/env python
 import numpy as np
 
+import sys
+if len(sys.argv) ==2:
+    seed = int(sys.argv[1])
+    print "Got seed =", seed
+    np.random.seed(seed)
+else:
+    seed = 0
+
 npart = 64   #Number of particles to generate
              #Should be divisible by 2!
 #machine = "LHC_design_coll"
@@ -88,23 +96,29 @@ z   = np.zeros(npart)
 #dPP = np.zeros(npart)
 E   = np.zeros(npart)
 
-#Reference particle at zero
-x  [0] = 0.0+x0
-xp [0] = 0.0+xcross
-y  [0] = 0.0+y0
-yp [0] = 0.0+ycross
-z  [0] = 0.0
-#dPP[0] = 0.0
-E  [0] = E0
+if seed == 0:
+    #Reference particle at zero
+    x  [0] = 0.0+x0
+    xp [0] = 0.0+xcross
+    y  [0] = 0.0+y0
+    yp [0] = 0.0+ycross
+    z  [0] = 0.0
+    #dPP[0] = 0.0
+    E  [0] = E0
 
 #Random generate the rest
-x  [1:] = np.random.normal(loc=x0,     scale=sigmax,   size=npart-1)
-y  [1:] = np.random.normal(loc=y0,     scale=sigmay,   size=npart-1)
-xp [1:] = np.random.normal(loc=xcross, scale=sigmaxp,  size=npart-1)
-yp [1:] = np.random.normal(loc=ycross, scale=sigmayp,  size=npart-1)
-z  [1:] = np.random.normal(loc=0,      scale=rmsZ,     size=npart-1)
+if seed == 0:
+    firstIdx = 1
+else:
+    firstIdx = 0
+x  [firstIdx:] = np.random.normal(loc=x0,     scale=sigmax,   size=npart-firstIdx)
+y  [firstIdx:] = np.random.normal(loc=y0,     scale=sigmay,   size=npart-firstIdx)
+xp [firstIdx:] = np.random.normal(loc=xcross, scale=sigmaxp,  size=npart-firstIdx)
+yp [firstIdx:] = np.random.normal(loc=ycross, scale=sigmayp,  size=npart-firstIdx)
+z  [firstIdx:] = np.random.normal(loc=0,      scale=rmsZ,     size=npart-firstIdx)
 
-E  [1:] = np.random.normal(loc=E0,      scale=E0*rmsE, size=npart-1)
+E  [firstIdx:] = np.random.normal(loc=E0,      scale=E0*rmsE, size=npart-firstIdx)
+
 p = np.sqrt((E-mp)*(E+mp))
 dPP = (p-p0)/p0
 
