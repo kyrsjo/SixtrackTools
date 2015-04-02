@@ -156,6 +156,8 @@ plot_particleNum(fdata,turnIdxs)
 
 corrX = []
 corrY = []
+angX = []
+angY = []
 X = []
 XP = []
 Y = []
@@ -180,6 +182,9 @@ while True:
 
     corrX.append(np.corrcoef(tdata['z'], tdata['x'])[0,1])    
     corrY.append(np.corrcoef(tdata['z'], tdata['y'])[0,1])    
+    
+    angX.append( np.arctan(np.polyfit(tdata['z'], tdata['x'],1)[0]) )
+    angY.append( np.arctan(np.polyfit(tdata['z'], tdata['y'],1)[0]) )
     
     for p in tdata:
         if p['ID'] == 1:
@@ -335,6 +340,14 @@ plt.plot(corrY)
 plt.xlabel("Turn")
 plt.ylabel("Corr (y)")
 
+plt.figure(7)
+plt.plot(map(lambda x:x*1e6,angX))
+plt.xlabel("Turn")
+plt.ylabel("Angle (x) [$\mu$rad]")
+plt.figure(8)
+plt.plot(map(lambda x: x*1e6,angY))
+plt.xlabel("Turn")
+plt.ylabel(r"Angle (y) [$\mu$rad]")
 
 (f,ax) = plt.subplots(2,2)
 
