@@ -1,14 +1,17 @@
 # This script runs Sixtrack (non-collimation version) multiple times, with different input distributions (from makeDist_fort13.py), doing a smart concatenation of the DUMP files.
 
 import subprocess
-import os
+import os,sys
 
 sixtrackExec  = "SixTrack_4520_cernlib_crlibm_gfortran_O4"
 generatorExec = "makeDist_fort13.py"
 
-nRuns = 20
+if len(sys.argv) == 2:
+    nRuns = int(sys.argv[1])
+else:
+    nRuns = 20
 
-dumpFiles = ["DUMP_ip1.dat"]
+dumpFiles = ["DUMP_ip1.dat","DUMP_ip5.dat"]
 dumpConcat = []
 
 #Do runs
