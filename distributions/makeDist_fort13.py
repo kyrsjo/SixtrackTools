@@ -111,16 +111,56 @@ if seed == 0:
     firstIdx = 1
 else:
     firstIdx = 0
+
 x  [firstIdx:] = np.random.normal(loc=x0,     scale=sigmax,   size=npart-firstIdx)
 y  [firstIdx:] = np.random.normal(loc=y0,     scale=sigmay,   size=npart-firstIdx)
 xp [firstIdx:] = np.random.normal(loc=xcross, scale=sigmaxp,  size=npart-firstIdx)
 yp [firstIdx:] = np.random.normal(loc=ycross, scale=sigmayp,  size=npart-firstIdx)
-z  [firstIdx:] = np.random.normal(loc=0,      scale=rmsZ,     size=npart-firstIdx)
 
-E  [firstIdx:] = np.random.normal(loc=E0,      scale=E0*rmsE, size=npart-firstIdx)
 
-p = np.sqrt((E-mp)*(E+mp))
-dPP = (p-p0)/p0
+#Accept/reject method for the longitudinal distribution,
+# accept only particles inside of bucket
+from longitudinalDyn import longitudinalHamiltonian 
+Hclass = longitudinalHamiltonian("HL_coll")
+Hmargin = -0.01 #Hamiltonian to accept below
+while firstIdx < npart:
+    z  [firstIdx:] = np.random.normal(loc=0,      scale=rmsZ,     size=npart-firstIdx)    
+    phi = Hclass.omegaRF*z/(c*beta)-np.pi
+    E  [firstIdx:] = np.random.normal(loc=E0,      scale=E0*rmsE, size=npart-firstIdx)
+    p = np.sqrt((E-mp)*(E+mp))
+    dPP = (p-p0)/p0
+    
+    H = Hclass.calcH(dPP,phi)[0]
+    print max(H)
+    print min(H)
+    
+    def hfilter(h):
+        #print h
+        if h>Hmargin:
+            #outside bucket!
+            return 0
+        else:
+            return 1
+    Hf = map(hfilter,H)
+    if sum(Hf) == npart:
+        print "Generation competed!"
+        break
+    else:
+        print "Retrying", npart-sum(Hf), "particles"
+
+    iShift = 0
+    for i in xrange(len(H)):
+        if not Hf[i]:
+            iShift = iShift+1
+        
+        if i+iShift >= npart:
+            z[i] = 0.0
+            E[i] = 0.0
+        else:
+            z[i] = z[i+iShift]
+            E[i] = E[i+iShift]
+    
+    firstIdx = npart-iShift
 
 #Write to file
 ofile = open("fort.13", 'w')
