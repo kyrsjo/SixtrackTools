@@ -3,10 +3,16 @@
 # This script converts old-style RIPP blocks into new-style DYNK blocks
 #
 
-nTurns = -1
+import sys
+if len(sys.argv) == 1:
+    ifilename = "fort.3"
+elif len(sys.argv) == 2:
+    ifilename = sys.argv[1]
+else:
+    print "Usage: python rippconverter.py (<file to convert>)"
 
-ifile = open("fort.3",'r')
-ofile = open("fort.3.dynk",'w')
+ifile = open(ifilename,'r')
+ofile = open(ifilename+".dynk",'w')
 
 inBlock = False
 blockName = None
@@ -25,16 +31,7 @@ for l in ifile:
             ofile.write(l)
             continue
         
-        if blockName == "TRAC":
-            if blockLine == 1 and not ENDE:
-                nTurns = int(l.split()[0])
-                print "Got nTurns =", nTurns, "from TRAC block"
-        
         if blockName == "RIPP":
-            if nTurns == -1:
-                print "Need TRAC block to initialize RIPP"
-                error = True
-                break
             print "Converting '"+l[:-1]+"':"
             ls = l.split()
             rName  = ls[0]
@@ -53,7 +50,7 @@ for l in ifile:
 
             FUN = "FUN RIPP-"+rName+" COSF_RIPP " + rDepth + " " + rFreq + " " + rPhase
             print FUN
-            SET = "SET "+rName+" average_ms RIPP-"+rName+" 1 "+str(nTurns+int(rTurn))+" "+rTurn
+            SET = "SET "+rName+" average_ms RIPP-"+rName+" 1 -1 "+rTurn
             print SET
 
             ofile.write(FUN+"\n")
