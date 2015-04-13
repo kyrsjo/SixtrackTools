@@ -6,6 +6,41 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import os,sys
 
+plotType = None
+S = 20 #marker size for scatter plots
+LW = None #line width for scatter plots
+DPI = None
+# Produce specific publication plots:
+plotType="IPACsingleCol_1"
+
+if plotType=="IPACsingleCol_1":
+    textwidth = 3.25 #inches, for 2Dpic paper
+    DPI = 300
+
+    from matplotlib import rcParams,rc
+#    rcParams.update({'text.usetex': True}) #slow
+    rc('font',**{'family':'serif','serif':['Times'],'size':10})
+    rcParams['figure.figsize'] = textwidth, textwidth/1.618
+    rcParams['figure.dpi'] = DPI
+    
+    (fig_zy, axes_zy) = plt.subplots(nrows=3, ncols=1,figsize=(textwidth,textwidth/1.618*3), sharex=True, sharey=True)
+    
+    S = 8
+    LW = 0.5
+    
+elif plotType=="IPACsingleCol_2":
+    textwidth = 3.25 #inches, for 2Dpic paper
+    DPI = 300
+
+    from matplotlib import rcParams,rc
+#    rcParams.update({'text.usetex': True}) #slow
+    rc('font',**{'family':'serif','serif':['Times'],'size':10})
+    rcParams['figure.figsize'] = textwidth, textwidth/1.618
+    rcParams['figure.dpi'] = DPI
+
+    S = 8
+    LW = 0.5
+
 # fileDType = np.dtype([('ID', np.int), ('turn', np.int),
 #                       ('s', np.float),('x', np.float),('xp', np.float),('z', np.float),
 #                       ('y', np.float),('yp', np.float),('dEE', np.float),
@@ -226,9 +261,39 @@ while True:
     #zx
     #plt.figure()
 
+    if plotType=="IPACsingleCol_1":
+        if t == 1:
+            axes_zy[0].scatter(tdata['z'], tdata['y']*1e3, c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
+            axes_zy[0].annotate("Turn 1", (0.95,0.8), xycoords="axes fraction", ha="right")
+#            axes_zy[0].yaxis.set_ticks([-40,-20,0,20,40,60])
+#            axes_zy[0].xaxis.set_ticks([-300,-150,-75,0,75,150,300])
+
+        elif t == 35:
+            axes_zy[1].scatter(tdata['z'], tdata['y']*1e3, c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
+            axes_zy[1].annotate("Turn 35", (0.95,0.8), xycoords="axes fraction", ha="right")
+            axes_zy[1].set_ylabel(r"y [$\mu$m]")
+#            axes_zy[1].yaxis.set_ticks([-50,-25,0,25,50])
+#            axes_zy[1].xaxis.set_ticks([-300,-150,-75,0,75,150,300])
+        elif t == 60:
+            axes_zy[2].scatter(tdata['z'], tdata['y']*1e3, c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
+            axes_zy[2].annotate("Turn 60", (0.95,0.8), xycoords="axes fraction", ha="right")
+            axes_zy[2].set_xlabel("z [mm]")
+#            axes_zy[2].yaxis.set_ticks([-50,-25,0,25,50])
+#            axes_zy[2].xaxis.set_ticks([-300,-150,-75,0,75,150,300])
+            
+            #Tune plot
+            fig_zy.subplots_adjust(hspace=0, left=0.17, bottom=0.065, top=0.985, right=0.96)
+            plt.setp([a.get_xticklabels() for a in fig_zy.axes[:-1]], visible=False)
+            for a in fig_zy.axes[:-1]:
+                a.get_yticklabels()[0].set(alpha=0.0)
+            
+            fig_zy.savefig("pngs/zy_multi.png",dpi=DPI)
+    
+    # continue #Skip following plots for speed
+
     plt.clf()
     plt.title("TURN =" + str(t))
-    plt.scatter(tdata['z'], tdata['x'], c=tdata['ID'],cmap='rainbow',s=20)
+    plt.scatter(tdata['z'], tdata['x'], c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
     plt.xlabel("z [mm]")
     plt.ylabel("x [mm]")
     plt.xlim(min(fdata[:]['z']),max(fdata[:]['z']))
@@ -238,18 +303,18 @@ while True:
 
     plt.clf()
     plt.title("TURN =" + str(t))
-    plt.scatter(tdata['z'], tdata['y'], c=tdata['ID'],cmap='rainbow',s=20)
+    plt.scatter(tdata['z'], tdata['y'], c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
     plt.xlabel("z [mm]")
     plt.ylabel("y [mm]")
     plt.xlim(min(fdata[:]['z']),max(fdata[:]['z']))
     plt.ylim(min(fdata[:]['y']),max(fdata[:]['y']))
 
-    plt.savefig("pngs/zy_%05i.png" % (t))
+    plt.savefig("pngs/zy_%05i.png" % (t),dpi=DPI)
 
 
     plt.clf()
     plt.title("TURN =" + str(t))
-    plt.scatter(tdata['x'], tdata['y'], c=tdata['ID'],cmap='rainbow',s=20)
+    plt.scatter(tdata['x'], tdata['y'], c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
     plt.xlabel("x [mm]")
     plt.ylabel("y [mm]")
     plt.xlim(min(fdata[:]['x']),max(fdata[:]['x']))
@@ -259,7 +324,7 @@ while True:
 
     plt.clf()
     plt.title("TURN =" + str(t))
-    plt.scatter(tdata['x'], tdata['xp'], c=tdata['ID'],cmap='rainbow',s=20)
+    plt.scatter(tdata['x'], tdata['xp'], c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
     plt.xlabel("x [mm]")
     plt.ylabel("xp [mrad]")
     plt.xlim(min(fdata[:]['x']),max(fdata[:]['x']))
@@ -269,7 +334,7 @@ while True:
 
     plt.clf()
     plt.title("TURN =" + str(t))
-    plt.scatter(tdata['y'], tdata['yp'], c=tdata['ID'],cmap='rainbow',s=20)
+    plt.scatter(tdata['y'], tdata['yp'], c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
     plt.xlabel("y [mm]")
     plt.ylabel("yp [mrad]")
     plt.xlim(min(fdata[:]['y']),max(fdata[:]['y']))
@@ -279,7 +344,7 @@ while True:
 
     plt.clf()
     plt.title("TURN =" + str(t))
-    plt.scatter(tdata['z'], tdata['dEE'], c=tdata['ID'],cmap='rainbow',s=20)
+    plt.scatter(tdata['z'], tdata['dEE'], c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
     plt.xlabel("z [mm]")
     plt.ylabel("dE/E")
     plt.xlim(min(fdata[:]['z']),max(fdata[:]['z']))
@@ -351,19 +416,19 @@ plt.ylabel(r"Angle (y) [$\mu$rad]")
 
 (f,ax) = plt.subplots(2,2)
 
-ax[0][0].scatter(X,XP,  c=T,cmap='rainbow',s=20)
+ax[0][0].scatter(X,XP,  c=T,cmap='rainbow',s=S)
 ax[0][0].set_xlabel("X [mm]")
 ax[0][0].set_ylabel("XP [mrad]")
 
-ax[0][1].scatter(Y,YP,  c=T,cmap='rainbow',s=20)
+ax[0][1].scatter(Y,YP,  c=T,cmap='rainbow',s=S)
 ax[0][1].set_xlabel("Y [mm]")
 ax[0][1].set_ylabel("YP [mrad]")
 
-ax[1][0].scatter(Z,DEE, c=T,cmap='rainbow',s=20)
+ax[1][0].scatter(Z,DEE, c=T,cmap='rainbow',s=S)
 ax[1][0].set_xlabel("Z [mm]")
 ax[1][0].set_ylabel("dE/E")
 
-ax[1][1].scatter(X,Y,   c=T,cmap='rainbow',s=20)
+ax[1][1].scatter(X,Y,   c=T,cmap='rainbow',s=S)
 ax[1][1].set_xlabel("X [mm]")
 ax[1][1].set_ylabel("Y [mm]")
 
