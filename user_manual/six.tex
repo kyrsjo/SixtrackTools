@@ -11,8 +11,11 @@
 \usepackage{hyperref}
 
 \usepackage[table]{xcolor}
-\usepackage{todonotes}
 \usepackage{longtable}
+\usepackage{multirow}
+
+\usepackage{todonotes}
+%\usepackage{draftwatermark}
 
 \newenvironment{description_alligned}[1]
 {\begin{list}{}%
@@ -39,16 +42,16 @@
 \vspace*{2mm}
 \begin{flushright}
   CERN/SL/94--56  (AP) \\
-  Update January 2012
+  Update June 2015
 \end{flushright}
 \begin{center}\LARGE
   {\bf SixTrack} \\
-  Version 4.2.16 \\
+  Version 4.5.25 \\
   {Single Particle Tracking Code Treating Transverse Motion with Synchrotron Oscillations in a Symplectic Manner} \\
   \vspace*{2mm} {\bf User's Reference Manual}
 \end{center}
 \begin{center}\em
-  F. Schmidt
+  F. Schmidt, update by K. Sjobak
 \end{center}
 \begin{center}\large
   {\bf Abstract} \\
@@ -666,15 +669,15 @@ deflection angle.
 
 \subsubsection{Dipole edge}
 
-\todo[inline]{Missing!}
+\todo[inline]{Not documented!}
 
-dipedge
+%dipedge
 
 type 24
 
 \subsubsection{Solenoid}
 
-\todo[inline]{Missing!}
+\todo[inline]{Need to check implementation and document...}
 
 type 25
 
@@ -951,13 +954,15 @@ ripple frequency are the input parameters.
 \end{description}
 
 
-\subsection{Dynamic Kicks} \label{sec:DYNK}
+\subsection{Dynamic Kicks}
+\label{sec:DYNK}
 
-\subparagraph{Description}
+\paragraph{Description}
 The DYNamic Kicks module~\cite{DYNKpaper} allows time-dependent modification of the settings of single elements.
-Currently supported are thin ``standard'' elements (type $\pm$1--$\pm$10~\ref{NonEle}) and crab cavities/RF multipoles (type $\pm$23, $\pm$26, $\pm$27 and $\pm$28~\ref{CrabCav}).
-Different element types support different attributes, where the standard elements support setting the multipole strength $K_n$ while crab cavities support setting of the voltage, frequency, and phase relative to the bunch.
-The settings can be computed on-the fly using several functions, loaded from input files, or a combination.
+The supported elements and attributes are listed in Table~\ref{tab:DYNK_SET}.
+%Currently supported are thin ``standard'' elements (type $\pm$1--$\pm$10~\ref{NonEle}) and crab cavities/RF multipoles (type $\pm$23, $\pm$26, $\pm$27 and $\pm$28~\ref{CrabCav}).
+%Different element types support different attributes, where the standard elements support setting the multipole strength $K_n$ while crab cavities support setting of the voltage, frequency, and phase relative to the bunch.
+The settings can be computed on-the fly using several functions, loaded from input files or a combination, as described in Table~\ref{tab:DYNK_FUN}.
 
 Further, unless explicitly switched off using a NOFILE statement, DYNK produces an output file ``dynksets.dat''.
 This file contains the setting of all elements and attributes for which DYNK is active.
@@ -986,7 +991,7 @@ The functions are always evaluated as a function of the current turn number $t$,
 %\begin{table}
 \begin{center}
 \begin{longtable}{|p{2.25cm} | p{4cm} p{9.5cm}|}
-  %Note: \\* (with the star) used to inhibit line breaks in the middle of groups of the same type
+  %Note: \\* (with the star) used to inhibit page breaks in the middle of groups of the same type
   \caption{Available function types in DYNK.}
   \label{tab:DYNK_FUN} \\*
   \hline
@@ -1139,10 +1144,62 @@ This statement defines an element setpoint, which changes an element/attribute t
 The \emph{SET} becomes active when the turn number reaches \emph{first-turn}, and switches off once \emph{last-turn} has been passed.
 When switched off, the value applied in \texttt{last-turn} stays for the rest of the simulation, or until overwritten by another \emph{SET}.
 If \emph{last-turn} equals -1, the \emph{SET} is active untill the end of the simulation.
+The element type and attribute combinations which can be used in DYNK is shown in Table~\ref{tab:DYNK_SET}.
 
 The argument \emph{turn-shift} is an integer (positive, negative, or zero) number which is added to the current turn number before computing the function.
 Thus, in order to (as an example) apply an exponential decay from the value $v_0$ starting in turn $t_0$ using the function defined as $f(t) = V_0 \exp(-t/\tau)$,
 a \emph{turn-shift} $-t_0$ should be applied.
+
+\begin{table}
+
+\begin{center}
+%\begin{longtable}{|p{2.25cm} | p{4cm} p{9.5cm}|}
+%\begin{longtable}{|l | l l l|}
+  %Note: \\* (with the star) used to inhibit page breaks in the middle of groups of the same type
+\caption{Element types and attributes available in DYNK.}
+\label{tab:DYNK_SET} %\\*
+\begin{tabular}{|l | l l p{6cm}|}
+
+  \hline
+  \rowcolor{blue!30}
+  Element type (idx) & Attribute & Units & Description \\*
+  \hline
+  % \endfirsthead
+
+  % \hline
+  % \rowcolor{blue!30}
+  % Element type (idx) & Attribute & Units & Description \\*
+  % %\hline
+  % \endhead
+
+  % \rowcolor{gray!15}
+  % \multicolumn{3}{|c|}{(The table continues on the next page)}\\*
+  % \hline
+  % \endfoot
+  
+  % \hline
+  % \endlastfoot
+
+  %\hline
+  \parbox{4cm}{~\\[-1mm] Standard thin elements\\ ($\pm$1 -- $\pm$10),\\ Section~\ref{NonEle}\\[-3mm]}
+    & \texttt{average\_ms} & radians * m\textsuperscript{-n} & See Table~\ref{T-NonEle} \\
+  \hline
+  \multirow{3}{*}{\parbox{4cm}{RF cavities ($\pm$12),\\ Section~\ref{Cavities}}}
+    & \texttt{voltage}     & MV      & One-turn accelerating voltage \\
+    & \texttt{harmonic}    & --      & Harmonic number of the cavity \\
+    & \texttt{lag\_angle}  & degrees & Lag angle of the cavity \\
+  \hline
+  \multirow{3}{*}{\parbox{4cm}{RF multipoles\\ ($\pm$23, $\pm$26 -- $\pm$28),\\ Section~\ref{CrabCav}}}
+    & \texttt{voltage}     & MV      & Kick voltage \\
+    & \texttt{frequency}   & MHz     & Frequency \\
+    & \texttt{phase}       & radians & Offset between zero-crossing and ideal bunch center \\
+
+  \hline
+
+%\end{longtable}
+\end{tabular}
+\end{center}
+\end{table}
 
 \subparagraph{NOFILE}
 The presence of this statement in a DYNK block switches off the normal writing of the output file ``dynksets.dat'' in every line, instead producing a file only containing the message ``\#\#\# DYNK file output was disabled with flag NOFILE in fort.3 \#\#\#''.
@@ -2587,17 +2644,62 @@ synchrotron oscillation in a symplectic manner are given in the {\em
 \end{description}
 
 \section{Extra output files}
-\todo[inline]{Write}
+For some studies, extra output from the simulation is desired.
+How to do this is described below.
 
 \subsection{Dumping of beam population}
 
-\subparagraph{Descrioption}
+\paragraph{Description}
+The DUMP block allows the beam population (i.e.\ the position in phase-space for all the particles) to be written to file.
+This can be done in any SINGLE ELEMENTS which are directly mentioned in the STRUCTURE INPUT part of fort.2 (BLOCs cannot be used).
+The particles are dumped just after the kick is applied, and how often to dump (every turn, every second turn, etc.) is user-selectable.
 
-\subparagraph{Keyword}
+\paragraph{Keyword}
+DUMP
 
-\subparagraph{Format}
+\paragraph{Number of data lines}
+variable, one for each element for which dump is active
 
-\subparagraph{Examples}
+\paragraph{Format}
+\texttt{element\_name frequency unit format (filename)}\\
+or\\
+\texttt{HIGH}
+\subparagraph{element\_name}
+one of the SINGLE ELEMENTS or ALL to dump at the exit of all single elements.
+\subparagraph{frequency}
+how often the beam population should be dumped in number of turns.
+\subparagraph{unit}
+fortran unit number to use, should not be used in other parts of SixTrack.
+The unit number and filename may be shared between different DUMP outputs, as long as they have the same format and \texttt{element\_name} is not \texttt{ALL}.
+\subparagraph{format}
+an integer specifying the output format. The following is accepted:
+\begin{enumerate}
+\item[0] -- General format:\\
+  No header\\
+  Lines: \texttt{turn structure\_element\_idx single\_element\_idx single\_element\_name s x1[m] x1'[rad] y1[m] y2'[rad] momentum[GeV/c] dE/E[GeV]}
+\item[1] -- Format for aperture check:\\
+  Header: \texttt{\# ID turn s[m] x[mm] xp[mrad] y[mm] yp[mrad] dE/E ktrack}\\
+  Lines: \texttt{particleID turn s[m] x[mm] xp[mrad] y[mm] yp[mrad] dE/E ktrack}
+\item[2] -- Modified format for aperture check:\\  
+  Header: \texttt{\# ID turn s[m] x[mm] xp[mrad] y[mm] yp[mrad] z[mm] dE/E ktrack}\\
+  A number of lines describing which elements are used and the current dump period is added one per relevant line in DUMP block.\\
+  Lines: \texttt{particleID turn s[m] x[mm] xp[mrad] y[mm] yp[mrad] z[mm] dE/E ktrack}
+\end{enumerate}
+
+\subparagraph{filename} is the name of the file to write to. This argument may be omitted, and if so the output file is named fort.\texttt{UNIT}.
+
+\subparagraph{HIGH} If present anywhere in the DUMP block this triggers high-precission output, meaning more digits in the output files.
+
+\paragraph{Example}
+\begin{verbatim}
+DUMP
+/ALL 1 663 2
+/CRAB5 1 659 0
+ip1 1 660 2 IP1_DUMP.dat
+ip5 1 662 2
+mqml.10l4.b1..1 1 661 2 MQ_DUMP.dat
+NEXT
+\end{verbatim}
 
 
 \chapter*{Conclusions}
