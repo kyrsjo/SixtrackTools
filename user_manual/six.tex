@@ -615,7 +615,7 @@ The definition of the multipole strength in a block will be given in
   transition energy respectively.
 \item [u0] Circumference voltage in [MV]
 \item [harm] Harmonic number
-\item [lag] Lag angle in the cavity (zero is default)
+\item [lag] Lag angle [degrees] in the cavity (zero is default)
 \end{description}
 
 \subsubsection{Beam--Beam Separation} \label{BBS}
@@ -668,22 +668,29 @@ The length of the ramps and the flat top are specified in the
 deflection angle.
 
 \subsubsection{Dipole edge}
+\paragraph{Format} {\em name type ed ek}
+\begin{description}
+\item[name] May contain up to sixteen characters
+\item[type] Type identifier $24$
+\item[ed] First argument, meaning unknown
+\item[ek] Second argument, meaning unknown
+\end{description}
 
-\todo[inline]{Not documented!}
-
-%dipedge
-
-type 24
+This element needs more documentation and possibly testing -- not currently supported!
 
 \subsubsection{Solenoid}
+\paragraph{Format} {\em name type ed ek}
+\begin{description}
+\item[name] May contain up to sixteen characters
+\item[type] Type identifier $25$
+\item[ed] First argument, meaning unknown
+\item[ek] Second argument, meaning unknown
+\end{description}
 
-\todo[inline]{Need to check implementation and document...}
-
-type 25
-
+This element needs more documentation and possibly testing -- not currently supported! There are also a few things in the code which looks very strange.
 
 \subsubsection{Crab Cavity} \label{CrabCav}
-\todo[inline]{Multipole RF kicks -- $\pm$26, $\pm$27, $\pm$28}
+
 \paragraph{Format} {\em name type Voltage Frequency Phase}
 \begin{description}
 \item [name] May contain up to sixteen characters
@@ -694,6 +701,7 @@ type 25
 \item [Phase] Phase of the excitation in radians.
 \end{description}
 
+\todo[inline]{Multipole RF kicks -- $\pm$26, $\pm$27, $\pm$28}
 
 \subsubsection{Beam Position Monitor} \label{BPM}
 \paragraph{Format} {\em BPMname 0 0 0 0}
@@ -1612,8 +1620,8 @@ variable but at least 1
 
 \begin{description}
 \item [mode] ``ELEMENT'' for a printout after each single element
-  (~\ref{SinEle}); ``BLOCK'' for a printout after each structure block
-  (~\ref{BloDef})
+  (\ref{SinEle}); ``BLOCK'' for a printout after each structure block
+  (\ref{BloDef})
 \item [number--of--blocks] (integer) The number of the blocks in the
   structure to which the linear parameter will be printed. If this
   number is set to zero or is larger than the number of blocks, the
@@ -1630,7 +1638,7 @@ variable but at least 1
    longitudinal position, the phase advances at that location, 4
    $\beta$--, $\alpha$-- and $\gamma$--functions, 4 angles for
    coordinates and momenta respectively, plus the coupling angle
-   [rad]) are written in binary format on file \# 11.
+   [rad]) are written in ascii format on file \# 11.
  \end{itemize}
 \item [E\_I, E\_II] (floats) The two eigen--emittances to be chosen to
   determine the coupling angle. They are typically set to be equal.
@@ -2302,13 +2310,10 @@ synchrotron oscillation are given in block (~\ref{SynOsc})
 
 \subparagraph{Format}
 \begin{itemize}
-\item data line 1: {\em numl numlr napx amp(1) amp0 ird imc}
+\item data line 1: {\em numl numlr napx amp(1) amp0 ird imc niu(1) niu(2) numlcp numlmax}
 \item data line 2: {\em idy(1) idy(2) idfor irew iclo6} \/(integers)
-\item data line 3: {\em nde(1) nde(2) nwr(1) nwr(2) nwr(3) nwr(4)
-    ntwin ibidu iexact} \/(integers)
+\item data line 3: {\em nde(1) nde(2) nwr(1) nwr(2) nwr(3) nwr(4) ntwin ibidu iexact} \/(integers)
 \end{itemize}
-
-\todo[inline]{Missing variables on line 1}
 
 \begin{description}
 \item [numl] (integer) Number of turns in the forward direction
@@ -2345,6 +2350,9 @@ synchrotron oscillation are given in block (~\ref{SynOsc})
   \/block (~\ref{IniCoo}).  The variation will be between \mbox{$ \pm
     \frac{\Delta p}{p_o} (\mathrm{max}) $} in steps of \mbox{$
     \frac{\Delta p}{p_o} (\mathrm{max}) $ / ({\em imc--1}\/).}
+\item[niu(1), niu(2)]
+\item[numlcp]
+\item[numlmax] 
 \item [idy(1), idy(2)] A tracking where one of the transversal motion
   planes shall be ignored is only possible when all coupling terms are
   switched off.  The part of the coupling that is due to closed orbit
@@ -2647,7 +2655,7 @@ synchrotron oscillation in a symplectic manner are given in the {\em
 For some studies, extra output from the simulation is desired.
 How to do this is described below.
 
-\subsection{Dumping of beam population}
+\subsection{Dumping of beam population} \label{sec:DUMP}
 
 \paragraph{Description}
 The DUMP block allows the beam population (i.e.\ the position in phase-space for all the particles) to be written to file.
@@ -2797,6 +2805,14 @@ code of Hirata~\cite{Hirata}.
   Elements &~\ref{DisEle} & \pageref{DisEle} \\*
   \rule[-2mm]{0mm}{5mm}
   & & Elements & & & & \\
+  \hline \stepcounter{kwc} \rule[-2mm]{0mm}{6mm} \thekwc & DUMP & 
+  & variable &
+  Writing the beam population to file &~\ref{sec:DUMP} &
+  \pageref{sec:DUMP} \\
+  \hline \stepcounter{kwc} \rule[-2mm]{0mm}{6mm} \thekwc & DYNK & 
+  & variable &
+  Dynamic kicks &~\ref{sec:DYNK} &
+  \pageref{sec:DYNK} \\
   \hline \stepcounter{kwc} \rule[-2mm]{0mm}{6mm} \thekwc & EL & & &
   Elliptical Aperture Limitation &~\ref{ApeLim} &
   \pageref{ApeLim} \\
@@ -2886,10 +2902,10 @@ code of Hirata~\cite{Hirata}.
   \rule[-2mm]{0mm}{5mm}
   & & Compensation & & Different Resonances & & \\
   \hline \stepcounter{kwc} \rule[-1mm]{0mm}{5mm} \thekwc & RIPP &
-  Power Supply & variable & Invokes a Sinusoidal Tune &~\ref{PowRip} &
+  Power Supply Ripple & variable & Invokes a Sinusoidal Tune &~\ref{PowRip} &
   \pageref{PowRip} \\*
   \rule[-2mm]{0mm}{5mm}
-  & & Ripple & & Variation & & \\
+  & & \textit{(obsolete -- use DYNK)} & & Variation \textit{(obsolete -- use DYNK)} & & \\
   \hline \stepcounter{kwc} \rule[-1mm]{0mm}{5mm} \thekwc & SEAR &
   Search for Resonance & variable & Evaluating Longitudinal
   Positions &~\ref{SeaPla} & \pageref{SeaPla} \\*
@@ -2943,8 +2959,6 @@ code of Hirata~\cite{Hirata}.
 \end{longtable}
 \normalsize
 \end{center}
-
-\todo[inline]{remove RIPP (or note obsolete), add DYNK and DUMP (alphabetic?)}
 
 \chapter{List of Default Values} \label{Default}
 
@@ -3161,7 +3175,7 @@ The program uses a couple of files for its input and output procedures.
   \hline \rule[-3.75mm]{0mm}{10mm}
   10 & X & X & Ascii & Summary of Post--processing (auxiliary) \\
   \hline \rule[-3.75mm]{0mm}{10mm}
-  11 & & X & Binary & This file is used to dump linear \\*
+  11 & & X & Ascii & This file is used to dump linear \\*
   \rule[-3.7mm]{0mm}{7.5mm}
   & & & & coupling parameters at locations of choice \\
   \hline \rule[-1.25mm]{0mm}{7.5mm}
@@ -3248,14 +3262,30 @@ The program uses a couple of files for its input and output procedures.
   \rule[-3.7mm]{0mm}{7.5mm}
   & & & & $ 0 <= k <= 31 $ \\
   \hline \rule[-3.75mm]{0mm}{10mm}
+  92 & & X & Ascii & Checkpoint/Restart only: \\*
+  \rule[-3.7mm]{0mm}{7.5mm}
+  & & & & Program ``standard output'' (lout) \\
+  \hline \rule[-3.75mm]{0mm}{10mm}
+  93 & & X & Ascii & Checkpoint/Restart only: Log file \\
+  \hline \rule[-3.75mm]{0mm}{10mm}
+  95 & X & X & Ascii & Checkpoint/Restart only: Data file 1 \\
+  \hline \rule[-3.75mm]{0mm}{10mm}
+  96 & X & X & Ascii & Checkpoint/Restart only: Data file 2 \\
+  \hline \rule[-3.75mm]{0mm}{10mm}
   98 & & X & Ascii & 6D coordinates at Cavity (1p,6(2x,e25.18)) \\
+  \hline \rule[-3.75mm]{0mm}{10mm}
+  664 & X &  & Ascii & DYNK reading FUN FILE(LIN) \\*
+  \rule[-3.7mm]{0mm}{7.5mm}
+  & & & & (only during initialization) \\
+  \hline \rule[-3.75mm]{0mm}{10mm}
+  665 & & X & Ascii & DYNK output file \texttt{dynksets.dat} \\
   \hline
 \end{longtable}
 \end{center}
 
 %\clearpage
 
-\todo[inline]{Update for dynk (input and output). Also update for Checkpoint/restart (92/93/95?) and collimation?}
+In addition to those files listed in the table, DUMP use arbitary file unit numbers as determined by the input file. The collimation module also uses many input/output files at various units, which are not listed here.
 
 \chapter{Data Structure of the Data--Files} \label{Header}
 
