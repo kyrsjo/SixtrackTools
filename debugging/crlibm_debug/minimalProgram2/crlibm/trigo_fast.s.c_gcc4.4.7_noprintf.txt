@@ -1,0 +1,4481 @@
+   1              		.file	"trigo_fast.c"
+   2              	# GNU C (GCC) version 4.4.7 20120313 (Red Hat 4.4.7-11) (x86_64-redhat-linux)
+   3              	#	compiled by GNU C version 4.4.7 20120313 (Red Hat 4.4.7-11), GMP version 4.3.1, MPFR version 2.4.
+   4              	# GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+   5              	# options passed:  -I. -imultilib 32 -DLINUX_INLINE -DHAVE_CONFIG_H
+   6              	# trigo_fast.c -m32 -mtune=generic -march=i686 -g -O1 -Wall -Wshadow
+   7              	# -Wpointer-arith -Wcast-align -Wconversion -Waggregate-return
+   8              	# -Wstrict-prototypes -Wnested-externs -Wlong-long -Winline -pedantic
+   9              	# -std=c99 -fPIC -fno-strict-aliasing -fverbose-asm
+  10              	# options enabled:  -fPIC -falign-loops -fargument-alias -fauto-inc-dec
+  11              	# -fbranch-count-reg -fcommon -fcprop-registers -fdefer-pop
+  12              	# -fdwarf2-cfi-asm -fearly-inlining -feliminate-unused-debug-types
+  13              	# -ffunction-cse -fgcse-lm -fguess-branch-probability -fident
+  14              	# -fif-conversion -fif-conversion2 -finline -finline-functions-called-once
+  15              	# -fipa-pure-const -fipa-reference -fira-share-save-slots
+  16              	# -fira-share-spill-slots -fivopts -fkeep-static-consts
+  17              	# -fleading-underscore -fmath-errno -fmerge-constants -fmerge-debug-strings
+  18              	# -fmove-loop-invariants -fpcc-struct-return -fpeephole -fsched-interblock
+  19              	# -fsched-spec -fsched-stalled-insns-dep -fsigned-zeros
+  20              	# -fsplit-ivs-in-unroller -fsplit-wide-types -ftoplevel-reorder
+  21              	# -ftrapping-math -ftree-ccp -ftree-ch -ftree-coalesce-vars
+  22              	# -ftree-copy-prop -ftree-copyrename -ftree-cselim -ftree-dce
+  23              	# -ftree-dominator-opts -ftree-dse -ftree-fre -ftree-loop-im
+  24              	# -ftree-loop-ivcanon -ftree-loop-optimize -ftree-parallelize-loops=
+  25              	# -ftree-reassoc -ftree-scev-cprop -ftree-sink -ftree-sra
+  26              	# -ftree-switch-conversion -ftree-ter -ftree-vect-loop-version
+  27              	# -funit-at-a-time -fvar-tracking -fvar-tracking-assignments
+  28              	# -fvect-cost-model -fverbose-asm -fzero-initialized-in-bss -m32 -m80387
+  29              	# -m96bit-long-double -maccumulate-outgoing-args -malign-stringops
+  30              	# -mfancy-math-387 -mfp-ret-in-387 -mfused-madd -mglibc -mieee-fp
+  31              	# -mno-red-zone -mno-sse4 -mpush-args -msahf -mtls-direct-seg-refs
+  32              	
+  40              	.Ltext0:
+  41              	# Compiler executable checksum: c4107769ffcd19d44690c951fbc131c4
+  42              	
+  43              		.cfi_sections	.debug_frame
+  45              	do_sin:
+  46              	.LFB7:
+  47              		.file 1 "trigo_fast.c"
+   0:trigo_fast.c  **** #include <stdio.h>
+   1:trigo_fast.c  **** #include <stdlib.h>
+   2:trigo_fast.c  **** #include "crlibm.h"
+   3:trigo_fast.c  **** #include "crlibm_private.h"
+   4:trigo_fast.c  **** #include "trigo_fast.h"
+   5:trigo_fast.c  **** #include "coefpi2.h"
+   6:trigo_fast.c  **** 
+   7:trigo_fast.c  **** 
+   8:trigo_fast.c  **** extern double scs_sin_rn(double);
+   9:trigo_fast.c  **** extern double scs_sin_ru(double);
+  10:trigo_fast.c  **** extern double scs_sin_rd(double);
+  11:trigo_fast.c  **** extern double scs_sin_rz(double);
+  12:trigo_fast.c  **** extern double scs_cos_rn(double);
+  13:trigo_fast.c  **** extern double scs_cos_ru(double);
+  14:trigo_fast.c  **** extern double scs_cos_rd(double);
+  15:trigo_fast.c  **** extern double scs_cos_rz(double);
+  16:trigo_fast.c  **** extern double scs_tan_rn(double); 
+  17:trigo_fast.c  **** extern double scs_tan_rd(double);  
+  18:trigo_fast.c  **** extern double scs_tan_ru(double);  
+  19:trigo_fast.c  **** extern double scs_tan_rz(double);  
+  20:trigo_fast.c  **** 
+  21:trigo_fast.c  **** #define DEBUG 0
+  22:trigo_fast.c  **** 
+  23:trigo_fast.c  **** #define INLINE_SINCOS 0
+  24:trigo_fast.c  **** 
+  25:trigo_fast.c  **** 
+  26:trigo_fast.c  **** 
+  27:trigo_fast.c  **** #if INLINE_SINCOS
+  28:trigo_fast.c  **** 
+  29:trigo_fast.c  **** #define DO_SIN(sh,sl)  {\
+  30:trigo_fast.c  ****   double thi, tlo, cahyh_h, cahyh_l, yh2;\
+  31:trigo_fast.c  ****   yh2 = yh*yh;\
+  32:trigo_fast.c  ****   if(sah==0.0)\
+  33:trigo_fast.c  ****     { \
+  34:trigo_fast.c  ****       ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));\
+  35:trigo_fast.c  ****       Add12(sh,sl,   yh, yl+ ts*yh);\
+  36:trigo_fast.c  ****     }\
+  37:trigo_fast.c  ****   else {\
+  38:trigo_fast.c  ****     Mul12(&cahyh_h,&cahyh_l, cah, yh);\
+  39:trigo_fast.c  ****     Add12(thi, tlo,     sah,cahyh_h);\
+  40:trigo_fast.c  ****     ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));\
+  41:trigo_fast.c  ****     tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));\
+  42:trigo_fast.c  ****     tlo = tc*sah + (ts*cahyh_h  +(sal + (tlo + (cahyh_l  + (cal*yh + cah*yl))))) ; \
+  43:trigo_fast.c  ****     Add12(sh,sl,  thi, tlo );  \
+  44:trigo_fast.c  ****   }\
+  45:trigo_fast.c  **** }
+  46:trigo_fast.c  **** 
+  47:trigo_fast.c  **** #define DO_COS(ch,cl) {\
+  48:trigo_fast.c  ****   double thi, tlo, sahyh_h,sahyh_l, yh2; \
+  49:trigo_fast.c  ****   yh2 = yh*yh ;\
+  50:trigo_fast.c  ****   if(sah==0.0) { \
+  51:trigo_fast.c  ****     tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));\
+  52:trigo_fast.c  ****       Add12(*ch,*cl, 1., tc);\
+  53:trigo_fast.c  ****     }\
+  54:trigo_fast.c  ****   else {\
+  55:trigo_fast.c  ****   Mul12(&sahyh_h,&sahyh_l, sah, yh);\
+  56:trigo_fast.c  ****   ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));\
+  57:trigo_fast.c  ****   tc = yh2 * (c2.d + yh2*(c4.d + yh2*(c6.d)));\
+  58:trigo_fast.c  ****   Add12(thi, tlo,  cah, -sahyh_h);\
+  59:trigo_fast.c  ****   tlo = tc*cah - (ts*sahyh_h -  (cal + (tlo  - (sahyh_l + (sal*yh + sah*yl)) ))) ; \
+  60:trigo_fast.c  ****   Add12(ch, cl,    thi, tlo ); \
+  61:trigo_fast.c  **** }}
+  62:trigo_fast.c  **** 
+  63:trigo_fast.c  **** 
+  64:trigo_fast.c  **** #else /* INLINE_SINCOS */
+  65:trigo_fast.c  **** 
+  66:trigo_fast.c  **** static double sah,sal,cah,cal;
+  67:trigo_fast.c  **** 
+  68:trigo_fast.c  **** 
+  69:trigo_fast.c  **** static void do_sin(double* sh, double* sl, double yh, double yl) {
+  48              		.loc 1 70 0
+  49              		.cfi_startproc
+  50              	.LVL0:
+  51 0000 55       		pushl	%ebp	#
+  52              		.cfi_def_cfa_offset 8
+  53              		.cfi_offset 5, -8
+  54 0001 89E5     		movl	%esp, %ebp	#,
+  55              		.cfi_def_cfa_register 5
+  56 0003 83EC28   		subl	$40, %esp	#,
+  57 0006 E8FCFFFF 		call	__i686.get_pc_thunk.cx	#
+  57      FF
+  58 000b 81C10200 		addl	$_GLOBAL_OFFSET_TABLE_, %ecx	# tmp3,
+  58      0000
+  59 0011 DD4508   		fldl	8(%ebp)	# yh
+  60 0014 DD4510   		fldl	16(%ebp)	# yl
+  61 0017 DD5DF0   		fstpl	-16(%ebp)	# %sfp
+  70:trigo_fast.c  ****   double thi, tlo, cahyh_h, cahyh_l, yh2, ts, tc;
+  71:trigo_fast.c  **** 
+  72:trigo_fast.c  ****   /* Add optimizations for small yh / k  here */
+  73:trigo_fast.c  **** 
+  74:trigo_fast.c  ****   yh2 = yh*yh;
+  62              		.loc 1 75 0
+  63 001a D9C0     		fld	%st(0)	#
+  64 001c D8C9     		fmul	%st(1), %st	#,
+  65              	.LVL1:
+  75:trigo_fast.c  **** 
+  76:trigo_fast.c  ****   if(sah==0.0)
+  66              		.loc 1 77 0
+  67 001e DD810000 		fldl	sah@GOTOFF(%ecx)	# sah
+  67      0000
+  68              	.LVL2:
+  69 0024 D9EE     		fldz
+  70 0026 D9C9     		fxch	%st(1)	#
+  71 0028 DBE9     		fucomi	%st(1), %st	#,
+  72 002a DDD9     		fstp	%st(1)	#
+  73 002c 7532     		jne	.L7	#,
+  74 002e 7A30     		jp	.L7	#,
+  75 0030 DDD8     		fstp	%st(0)	#
+  76              	.LVL3:
+  77:trigo_fast.c  ****     { /*  sa=0 and ca=1, which simplifies computations */
+  78:trigo_fast.c  ****       ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
+  79:trigo_fast.c  ****       /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */
+  80:trigo_fast.c  ****       /* Now we need to compute (1+ts)*(yh+yl) */
+  81:trigo_fast.c  ****       Add12(*sh,*sl,   yh, yl+ ts*yh);
+  77              		.loc 1 82 0
+  78 0032 D9C0     		fld	%st(0)	#
+  79 0034 DC893008 		fmull	s7@GOTOFF(%ecx)	# s7.d
+  79      0000
+  80              	.LVL4:
+  81 003a DC812808 		faddl	s5@GOTOFF(%ecx)	# s5.d
+  81      0000
+  82 0040 D8C9     		fmul	%st(1), %st	#,
+  83 0042 DC812008 		faddl	s3@GOTOFF(%ecx)	# s3.d
+  83      0000
+  84 0048 DEC9     		fmulp	%st, %st(1)	#,
+  85              	.LVL5:
+  86              	.LBB2:
+  87 004a D8C9     		fmul	%st(1), %st	#,
+  88 004c DC45F0   		faddl	-16(%ebp)	# %sfp
+  89              	.LVL6:
+  90 004f D9C1     		fld	%st(1)	#
+  91              	.LVL7:
+  92 0051 D8C1     		fadd	%st(1), %st	#,
+  93 0053 DD10     		fstl	(%eax)	#* sh
+  94              	.LVL8:
+  95 0055 DEE2     		fsubp	%st, %st(2)	#,
+  96              	.LVL9:
+  97 0057 DEE1     		fsubp	%st, %st(1)	#,
+  98              	.LVL10:
+  99 0059 DD1A     		fstpl	(%edx)	#* sl
+ 100 005b E9C30000 		jmp	.L5	#
+ 100      00
+ 101              	.LVL11:
+ 102              	.L7:
+ 103              	.LBE2:
+ 104              	.LBB3:
+  82:trigo_fast.c  ****     }
+  83:trigo_fast.c  ****   else {
+  84:trigo_fast.c  ****    
+  85:trigo_fast.c  ****     Mul12(&cahyh_h,&cahyh_l, cah, yh);
+ 105              		.loc 1 86 0
+ 106 0060 DD811000 		fldl	cah@GOTOFF(%ecx)	# cah
+ 106      0000
+ 107              	.LVL12:
+ 108 0066 DD810000 		fldl	.LC1@GOTOFF(%ecx)	#
+ 108      0000
+ 109 006c D9C1     		fld	%st(1)	#
+ 110 006e D8C9     		fmul	%st(1), %st	#,
+ 111 0070 D9C9     		fxch	%st(1)	#
+ 112              	.LVL13:
+ 113 0072 D8CD     		fmul	%st(5), %st	#,
+ 114              	.LVL14:
+ 115 0074 D9C2     		fld	%st(2)	#
+ 116              	.LVL15:
+ 117 0076 D8E2     		fsub	%st(2), %st	#,
+ 118 0078 DEC2     		faddp	%st, %st(2)	#,
+ 119              	.LVL16:
+ 120 007a D9C5     		fld	%st(5)	#
+ 121 007c D8E1     		fsub	%st(1), %st	#,
+ 122 007e DEC1     		faddp	%st, %st(1)	#,
+ 123              	.LVL17:
+ 124 0080 D9C2     		fld	%st(2)	#
+ 125              	.LVL18:
+ 126 0082 D8E2     		fsub	%st(2), %st	#,
+ 127 0084 DD5DE0   		fstpl	-32(%ebp)	# %sfp
+ 128              	.LVL19:
+ 129 0087 D9C5     		fld	%st(5)	#
+ 130              	.LVL20:
+ 131 0089 D8E1     		fsub	%st(1), %st	#,
+ 132 008b DD5DE8   		fstpl	-24(%ebp)	# %sfp
+ 133              	.LVL21:
+ 134 008e D9C5     		fld	%st(5)	#
+ 135              	.LVL22:
+ 136 0090 D8CB     		fmul	%st(3), %st	#,
+ 137              	.LVL23:
+ 138              	.LBE3:
+ 139              	.LBB4:
+  86:trigo_fast.c  ****     Add12(thi, tlo, sah,cahyh_h);
+ 140              		.loc 1 87 0
+ 141 0092 D9C4     		fld	%st(4)	#
+ 142              	.LVL24:
+ 143 0094 D8C1     		fadd	%st(1), %st	#,
+ 144 0096 DD5DF8   		fstpl	-8(%ebp)	# %sfp
+ 145              	.LVL25:
+ 146              	.LBE4:
+  87:trigo_fast.c  ****     
+  88:trigo_fast.c  ****     ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
+  89:trigo_fast.c  ****     /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */
+  90:trigo_fast.c  ****     
+  91:trigo_fast.c  ****     tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));
+  92:trigo_fast.c  ****     /* 1+ tc is an approx to cos(yh+yl) */
+  93:trigo_fast.c  **** 
+  94:trigo_fast.c  ****     /* now we compute an approximation to cos(a)sin(x) + sin(a)cos(x)   */
+  95:trigo_fast.c  ****     tlo = tc*sah + (ts*cahyh_h  +(sal + (tlo + (cahyh_l  + (cal*yh + cah*yl))))) ;
+ 147              		.loc 1 96 0
+ 148 0099 D9C5     		fld	%st(5)	#
+ 149              	.LVL26:
+ 150 009b DC893008 		fmull	s7@GOTOFF(%ecx)	# s7.d
+ 150      0000
+ 151 00a1 DC812808 		faddl	s5@GOTOFF(%ecx)	# s5.d
+ 151      0000
+ 152 00a7 D8CE     		fmul	%st(6), %st	#,
+ 153 00a9 DC812008 		faddl	s3@GOTOFF(%ecx)	# s3.d
+ 153      0000
+ 154 00af D8CE     		fmul	%st(6), %st	#,
+ 155 00b1 D8C9     		fmul	%st(1), %st	#,
+ 156 00b3 DD5DD8   		fstpl	-40(%ebp)	# %sfp
+ 157              	.LBB5:
+ 158 00b6 D9C2     		fld	%st(2)	#
+ 159 00b8 D8CA     		fmul	%st(2), %st	#,
+ 160 00ba D8E1     		fsub	%st(1), %st	#,
+ 161 00bc D9CB     		fxch	%st(3)	#
+ 162              	.LVL27:
+ 163 00be DC4DE8   		fmull	-24(%ebp)	# %sfp
+ 164 00c1 DEC3     		faddp	%st, %st(3)	#,
+ 165 00c3 D9C9     		fxch	%st(1)	#
+ 166 00c5 DC4DE0   		fmull	-32(%ebp)	# %sfp
+ 167 00c8 DEC2     		faddp	%st, %st(2)	#,
+ 168 00ca DD45E0   		fldl	-32(%ebp)	# %sfp
+ 169 00cd DC4DE8   		fmull	-24(%ebp)	# %sfp
+ 170 00d0 DEC2     		faddp	%st, %st(2)	#,
+ 171 00d2 D9CD     		fxch	%st(5)	#
+ 172              	.LVL28:
+ 173              	.LBE5:
+ 174 00d4 DC891800 		fmull	cal@GOTOFF(%ecx)	# cal
+ 174      0000
+ 175 00da D9CA     		fxch	%st(2)	#
+ 176 00dc DC4DF0   		fmull	-16(%ebp)	# %sfp
+ 177 00df DEC2     		faddp	%st, %st(2)	#,
+ 178 00e1 DEC1     		faddp	%st, %st(1)	#,
+ 179              	.LBB6:
+ 180 00e3 DD45F8   		fldl	-8(%ebp)	# %sfp
+ 181 00e6 D8E2     		fsub	%st(2), %st	#,
+ 182 00e8 DEEC     		fsubrp	%st, %st(4)	#,
+ 183              	.LVL29:
+ 184              	.LBE6:
+ 185 00ea DEC3     		faddp	%st, %st(3)	#,
+ 186 00ec D9CA     		fxch	%st(2)	#
+ 187 00ee DC810800 		faddl	sal@GOTOFF(%ecx)	# sal
+ 187      0000
+ 188 00f4 DC45D8   		faddl	-40(%ebp)	# %sfp
+ 189 00f7 D9C1     		fld	%st(1)	#
+ 190 00f9 DC894808 		fmull	c6@GOTOFF(%ecx)	# c6.d
+ 190      0000
+ 191 00ff DC814008 		faddl	c4@GOTOFF(%ecx)	# c4.d
+ 191      0000
+ 192 0105 D8CA     		fmul	%st(2), %st	#,
+ 193 0107 DC813808 		faddl	c2@GOTOFF(%ecx)	# c2.d
+ 193      0000
+ 194 010d DECA     		fmulp	%st, %st(2)	#,
+ 195 010f D9CA     		fxch	%st(2)	#
+ 196 0111 DEC9     		fmulp	%st, %st(1)	#,
+ 197 0113 DEC1     		faddp	%st, %st(1)	#,
+ 198              	.LVL30:
+ 199              	.LBB7:
+  96:trigo_fast.c  ****     Add12(*sh,*sl,  thi, tlo );
+ 200              		.loc 1 97 0
+ 201 0115 DD45F8   		fldl	-8(%ebp)	# %sfp
+ 202              	.LVL31:
+ 203 0118 D8C1     		fadd	%st(1), %st	#,
+ 204 011a DD10     		fstl	(%eax)	#* sh
+ 205              	.LVL32:
+ 206 011c DC65F8   		fsubl	-8(%ebp)	# %sfp
+ 207              	.LVL33:
+ 208 011f DEE9     		fsubrp	%st, %st(1)	#,
+ 209 0121 DD1A     		fstpl	(%edx)	#* sl
+ 210              	.LVL34:
+ 211              	.L5:
+ 212              	.LBE7:
+  97:trigo_fast.c  ****   }
+  98:trigo_fast.c  **** }
+ 213              		.loc 1 99 0
+ 214 0123 C9       		leave
+ 215              		.cfi_restore 5
+ 216              		.cfi_def_cfa 4, 4
+ 217 0124 C3       		ret
+ 218              		.cfi_endproc
+ 219              	.LFE7:
+ 222              	do_cos:
+ 223              	.LFB8:
+  99:trigo_fast.c  **** 
+ 100:trigo_fast.c  **** 
+ 101:trigo_fast.c  **** static void do_cos(double* ch, double* cl, double yh, double yl) {
+ 224              		.loc 1 102 0
+ 225              		.cfi_startproc
+ 226              	.LVL35:
+ 227 0125 55       		pushl	%ebp	#
+ 228              		.cfi_def_cfa_offset 8
+ 229              		.cfi_offset 5, -8
+ 230 0126 89E5     		movl	%esp, %ebp	#,
+ 231              		.cfi_def_cfa_register 5
+ 232 0128 83EC28   		subl	$40, %esp	#,
+ 233 012b E8FCFFFF 		call	__i686.get_pc_thunk.cx	#
+ 233      FF
+ 234 0130 81C10200 		addl	$_GLOBAL_OFFSET_TABLE_, %ecx	# tmp3,
+ 234      0000
+ 235 0136 DD4508   		fldl	8(%ebp)	# yh
+ 236 0139 DD4510   		fldl	16(%ebp)	# yl
+ 237 013c DD5DE0   		fstpl	-32(%ebp)	# %sfp
+ 102:trigo_fast.c  ****   double yh2, ts, tc, thi, tlo, sahyh_h,sahyh_l; 
+ 103:trigo_fast.c  **** 
+ 104:trigo_fast.c  ****   yh2 = yh*yh ;
+ 238              		.loc 1 105 0
+ 239 013f D9C0     		fld	%st(0)	#
+ 240 0141 D8C9     		fmul	%st(1), %st	#,
+ 241              	.LVL36:
+ 105:trigo_fast.c  **** 
+ 106:trigo_fast.c  ****   if(sah==0.0)
+ 242              		.loc 1 107 0
+ 243 0143 DD810000 		fldl	sah@GOTOFF(%ecx)	# sah
+ 243      0000
+ 244              	.LVL37:
+ 245 0149 D9EE     		fldz
+ 246 014b D9C9     		fxch	%st(1)	#
+ 247 014d DBE9     		fucomi	%st(1), %st	#,
+ 248 014f DDD9     		fstp	%st(1)	#
+ 249 0151 7531     		jne	.L14	#,
+ 250 0153 7A2F     		jp	.L14	#,
+ 251 0155 DDD8     		fstp	%st(0)	#
+ 252 0157 DDD9     		fstp	%st(1)	#
+ 107:trigo_fast.c  ****     { /*  sa=0 and ca=1, which simplifies computations */
+ 108:trigo_fast.c  ****     tc = yh2 * (c2.d + yh2*(c4.d + yh2*c6.d ));
+ 253              		.loc 1 109 0
+ 254 0159 D9C0     		fld	%st(0)	#
+ 255 015b DC894808 		fmull	c6@GOTOFF(%ecx)	# c6.d
+ 255      0000
+ 256 0161 DC814008 		faddl	c4@GOTOFF(%ecx)	# c4.d
+ 256      0000
+ 257 0167 D8C9     		fmul	%st(1), %st	#,
+ 258 0169 DC813808 		faddl	c2@GOTOFF(%ecx)	# c2.d
+ 258      0000
+ 259 016f DEC9     		fmulp	%st, %st(1)	#,
+ 260              	.LVL38:
+ 261              	.LBB8:
+ 109:trigo_fast.c  ****     /* 1+ tc is an approx to cos(yh+yl) */
+ 110:trigo_fast.c  **** 
+ 111:trigo_fast.c  ****       /* Now we need to compute 1+tc */
+ 112:trigo_fast.c  ****       Add12(*ch,*cl, 1., tc);
+ 262              		.loc 1 113 0
+ 263 0171 D9E8     		fld1
+ 264              	.LVL39:
+ 265 0173 D9C1     		fld	%st(1)	#
+ 266 0175 D8C1     		fadd	%st(1), %st	#,
+ 267 0177 DD10     		fstl	(%eax)	#* ch
+ 268              	.LVL40:
+ 269 0179 DEE1     		fsubp	%st, %st(1)	#,
+ 270 017b DEE9     		fsubrp	%st, %st(1)	#,
+ 271 017d DD1A     		fstpl	(%edx)	#* cl
+ 272 017f E9D20000 		jmp	.L12	#
+ 272      00
+ 273              	.LVL41:
+ 274              	.L14:
+ 275              	.LBE8:
+ 276              	.LBB9:
+ 113:trigo_fast.c  ****     }
+ 114:trigo_fast.c  ****   else {
+ 115:trigo_fast.c  ****   
+ 116:trigo_fast.c  ****   /* now we compute an approximation to cos(a)cos(x) - sin(a)sin(x)   */
+ 117:trigo_fast.c  ****   
+ 118:trigo_fast.c  ****   Mul12(&sahyh_h,&sahyh_l, sah, yh);
+ 277              		.loc 1 119 0
+ 278 0184 DD810000 		fldl	.LC1@GOTOFF(%ecx)	#
+ 278      0000
+ 279              	.LVL42:
+ 280 018a D9C1     		fld	%st(1)	#
+ 281 018c D8C9     		fmul	%st(1), %st	#,
+ 282 018e D9C9     		fxch	%st(1)	#
+ 283              	.LVL43:
+ 284 0190 D8CC     		fmul	%st(4), %st	#,
+ 285              	.LVL44:
+ 286 0192 D9C2     		fld	%st(2)	#
+ 287              	.LVL45:
+ 288 0194 D8E2     		fsub	%st(2), %st	#,
+ 289 0196 DEC2     		faddp	%st, %st(2)	#,
+ 290              	.LVL46:
+ 291 0198 D9C4     		fld	%st(4)	#
+ 292 019a D8E1     		fsub	%st(1), %st	#,
+ 293 019c DEC1     		faddp	%st, %st(1)	#,
+ 294              	.LVL47:
+ 295 019e D9C2     		fld	%st(2)	#
+ 296              	.LVL48:
+ 297 01a0 D8E2     		fsub	%st(2), %st	#,
+ 298 01a2 DD5DE8   		fstpl	-24(%ebp)	# %sfp
+ 299              	.LVL49:
+ 300 01a5 D9C4     		fld	%st(4)	#
+ 301              	.LVL50:
+ 302 01a7 D8E1     		fsub	%st(1), %st	#,
+ 303 01a9 DD5DF0   		fstpl	-16(%ebp)	# %sfp
+ 304              	.LVL51:
+ 305 01ac D9C4     		fld	%st(4)	#
+ 306              	.LVL52:
+ 307 01ae D8CB     		fmul	%st(3), %st	#,
+ 308              	.LVL53:
+ 309              	.LBE9:
+ 310              	.LBB10:
+ 119:trigo_fast.c  **** 
+ 120:trigo_fast.c  ****   ts = yh2 * (s3.d + yh2*(s5.d + yh2*s7.d));
+ 121:trigo_fast.c  ****   /* (1+ts)*(yh+yl) is an approx to sin(yh+yl) */
+ 122:trigo_fast.c  **** 
+ 123:trigo_fast.c  ****   tc = yh2 * (c2.d + yh2*(c4.d + yh2*(c6.d)));
+ 124:trigo_fast.c  ****   /* 1+ tc is an approx to cos(yh+yl) */
+ 125:trigo_fast.c  ****   
+ 126:trigo_fast.c  ****   Add12(thi, tlo,  cah, -sahyh_h);
+ 311              		.loc 1 127 0
+ 312 01b0 D9C0     		fld	%st(0)	#
+ 313 01b2 D9E0     		fchs
+ 314              	.LVL54:
+ 315 01b4 DD5DF8   		fstpl	-8(%ebp)	# %sfp
+ 316              	.LVL55:
+ 317 01b7 DD811000 		fldl	cah@GOTOFF(%ecx)	# cah
+ 317      0000
+ 318              	.LVL56:
+ 319 01bd DC45F8   		faddl	-8(%ebp)	# %sfp
+ 320              	.LVL57:
+ 321              	.LBE10:
+ 127:trigo_fast.c  ****   tlo = tc*cah - (ts*sahyh_h -  (cal + (tlo  - (sahyh_l + (sal*yh + sah*yl)) ))) ;
+ 322              		.loc 1 128 0
+ 323 01c0 D9C5     		fld	%st(5)	#
+ 324              	.LVL58:
+ 325 01c2 DC893008 		fmull	s7@GOTOFF(%ecx)	# s7.d
+ 325      0000
+ 326 01c8 DC812808 		faddl	s5@GOTOFF(%ecx)	# s5.d
+ 326      0000
+ 327 01ce D8CE     		fmul	%st(6), %st	#,
+ 328 01d0 DC812008 		faddl	s3@GOTOFF(%ecx)	# s3.d
+ 328      0000
+ 329 01d6 D8CE     		fmul	%st(6), %st	#,
+ 330 01d8 D8CA     		fmul	%st(2), %st	#,
+ 331 01da DD5DD8   		fstpl	-40(%ebp)	# %sfp
+ 332              	.LBB11:
+ 333 01dd DD811000 		fldl	cah@GOTOFF(%ecx)	# cah
+ 333      0000
+ 334 01e3 D8E9     		fsubr	%st(1), %st	#,
+ 335 01e5 DC6DF8   		fsubrl	-8(%ebp)	# %sfp
+ 336 01e8 DD5DF8   		fstpl	-8(%ebp)	# %sfp
+ 337              	.LBE11:
+ 338              	.LBB12:
+ 339 01eb D9C3     		fld	%st(3)	#
+ 340 01ed D8CB     		fmul	%st(3), %st	#,
+ 341 01ef DEE2     		fsubp	%st, %st(2)	#,
+ 342 01f1 D9CB     		fxch	%st(3)	#
+ 343 01f3 DC4DF0   		fmull	-16(%ebp)	# %sfp
+ 344 01f6 DEC1     		faddp	%st, %st(1)	#,
+ 345 01f8 D9C9     		fxch	%st(1)	#
+ 346 01fa DC4DE8   		fmull	-24(%ebp)	# %sfp
+ 347 01fd DEC1     		faddp	%st, %st(1)	#,
+ 348 01ff DD45E8   		fldl	-24(%ebp)	# %sfp
+ 349 0202 DC4DF0   		fmull	-16(%ebp)	# %sfp
+ 350 0205 DEC1     		faddp	%st, %st(1)	#,
+ 351 0207 D9CC     		fxch	%st(4)	#
+ 352              	.LVL59:
+ 353              	.LBE12:
+ 354 0209 DC890800 		fmull	sal@GOTOFF(%ecx)	# sal
+ 354      0000
+ 355 020f D9CA     		fxch	%st(2)	#
+ 356 0211 DC4DE0   		fmull	-32(%ebp)	# %sfp
+ 357 0214 DEC2     		faddp	%st, %st(2)	#,
+ 358 0216 D9CB     		fxch	%st(3)	#
+ 359 0218 DEC1     		faddp	%st, %st(1)	#,
+ 360 021a DD45F8   		fldl	-8(%ebp)	# %sfp
+ 361 021d DEE1     		fsubp	%st, %st(1)	#,
+ 362 021f DC811800 		faddl	cal@GOTOFF(%ecx)	# cal
+ 362      0000
+ 363 0225 DC6DD8   		fsubrl	-40(%ebp)	# %sfp
+ 364 0228 D9C1     		fld	%st(1)	#
+ 365 022a DC894808 		fmull	c6@GOTOFF(%ecx)	# c6.d
+ 365      0000
+ 366 0230 DC814008 		faddl	c4@GOTOFF(%ecx)	# c4.d
+ 366      0000
+ 367 0236 D8CA     		fmul	%st(2), %st	#,
+ 368 0238 DC813808 		faddl	c2@GOTOFF(%ecx)	# c2.d
+ 368      0000
+ 369 023e DECA     		fmulp	%st, %st(2)	#,
+ 370 0240 D9C9     		fxch	%st(1)	#
+ 371 0242 DC891000 		fmull	cah@GOTOFF(%ecx)	# cah
+ 371      0000
+ 372 0248 DEE1     		fsubp	%st, %st(1)	#,
+ 373              	.LVL60:
+ 374              	.LBB13:
+ 128:trigo_fast.c  ****   Add12(*ch, *cl,    thi, tlo );
+ 375              		.loc 1 129 0
+ 376 024a D9C1     		fld	%st(1)	#
+ 377              	.LVL61:
+ 378 024c D8C1     		fadd	%st(1), %st	#,
+ 379 024e DD10     		fstl	(%eax)	#* ch
+ 380              	.LVL62:
+ 381 0250 DEE2     		fsubp	%st, %st(2)	#,
+ 382              	.LVL63:
+ 383 0252 DEE1     		fsubp	%st, %st(1)	#,
+ 384              	.LVL64:
+ 385 0254 DD1A     		fstpl	(%edx)	#* cl
+ 386              	.LVL65:
+ 387              	.L12:
+ 388              	.LBE13:
+ 129:trigo_fast.c  ****   }
+ 130:trigo_fast.c  **** }
+ 389              		.loc 1 131 0
+ 390 0256 C9       		leave
+ 391              		.cfi_restore 5
+ 392              		.cfi_def_cfa 4, 4
+ 393 0257 C3       		ret
+ 394              		.cfi_endproc
+ 395              	.LFE8:
+ 397              	.globl tan_rz
+ 399              	tan_rz:
+ 400              	.LFB21:
+ 131:trigo_fast.c  **** 
+ 132:trigo_fast.c  **** #endif /* INLINE_SINCOS */
+ 133:trigo_fast.c  **** 
+ 134:trigo_fast.c  **** 
+ 135:trigo_fast.c  **** 
+ 136:trigo_fast.c  ****  
+ 137:trigo_fast.c  **** 
+ 138:trigo_fast.c  **** 
+ 139:trigo_fast.c  **** 
+ 140:trigo_fast.c  **** 
+ 141:trigo_fast.c  **** 
+ 142:trigo_fast.c  **** int static trig_range_reduction(double* pyh, double* pyl, 
+ 143:trigo_fast.c  **** 				double x, int absxhi, 
+ 144:trigo_fast.c  **** 				double (*scs_fun)(double)   ) {
+ 145:trigo_fast.c  ****   printf ("Inside range reduction!\n");
+ 146:trigo_fast.c  ****   printf ("x=%.20e absxhi=%i\n", x,absxhi);
+ 147:trigo_fast.c  ****   printf ("pyh=%.20e, pyl=%.20e\n", *pyh,*pyl);
+ 148:trigo_fast.c  ****   printf ("XMAX_CODY_WAITE_3=%i\n",XMAX_CODY_WAITE_3);
+ 149:trigo_fast.c  ****   printf ("INV_PIO256       =%.20e\n",INV_PIO256);
+ 150:trigo_fast.c  ****   printf ("RR_DD_MCH        =%.20e\n",RR_DD_MCH);
+ 151:trigo_fast.c  ****   int k;
+ 152:trigo_fast.c  ****   double kd;
+ 153:trigo_fast.c  ****   if  (absxhi < XMAX_CODY_WAITE_3) {
+ 154:trigo_fast.c  ****     DOUBLE2INT(k, x * INV_PIO256);
+ 155:trigo_fast.c  ****     printf("k=%i\n", k);
+ 156:trigo_fast.c  ****     kd = (double) k;
+ 157:trigo_fast.c  ****     printf("kd=%.20e\n", kd);
+ 158:trigo_fast.c  ****     if(((k&127) == 0)) { 
+ 159:trigo_fast.c  ****       printf("YES (k&127) == 0\n");
+ 160:trigo_fast.c  ****       /* Here we risk a large cancellation on yh+yl; 
+ 161:trigo_fast.c  **** 	 on the other hand we will have sa=0 and ca=1*/
+ 162:trigo_fast.c  ****       double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
+ 163:trigo_fast.c  ****       /* TODO : improve this code by pre-splitting CH,  CM and k (as an int) 
+ 164:trigo_fast.c  **** 	 Then you can improve the precision by taking kmax into account */
+ 165:trigo_fast.c  ****       /* all this is exact */
+ 166:trigo_fast.c  ****       
+ 167:trigo_fast.c  ****       kch_h = 0.0;
+ 168:trigo_fast.c  ****       kch_l = 0.0;
+ 169:trigo_fast.c  **** 
+ 170:trigo_fast.c  ****       printf("kch_h=%.20e kch_l=%.20e kd=%.20e\n\n",kch_h,kch_l,kd);
+ 171:trigo_fast.c  ****       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+ 172:trigo_fast.c  ****       printf("kch_h=%.20e kch_l=%.20e kd=%.20e\n",kch_h,kch_l,kd);//KCH_L is quite different!
+ 173:trigo_fast.c  **** 
+ 174:trigo_fast.c  ****       printf("kcm_h=%.20e kcm_l=%.20e kd=%.20e\n\n",kch_h,kch_l,kd);
+ 175:trigo_fast.c  ****       Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+ 176:trigo_fast.c  ****       printf("kcm_h=%.20e kcm_l=%.20e kd=%.20e\n\n",kch_h,kch_l,kd);
+ 177:trigo_fast.c  **** 
+ 178:trigo_fast.c  ****       Add12 (th,tl,  kch_l, kcm_h) ;
+ 179:trigo_fast.c  ****       /* only rounding error in the last multiplication and addition */ 
+ 180:trigo_fast.c  ****       Add22 (pyh, pyl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+ 181:trigo_fast.c  ****     } 
+ 182:trigo_fast.c  ****     else {      
+ 183:trigo_fast.c  ****       /* Argument reduction  by Cody & Waite algorithm */ 
+ 184:trigo_fast.c  ****       /* Here we do not care about cancellations on *pyh+yl */
+ 185:trigo_fast.c  ****       if (absxhi < XMAX_CODY_WAITE_2) { 
+ 186:trigo_fast.c  **** 	/* all this is exact but the rightmost multiplication */
+ 187:trigo_fast.c  **** 	Add12 (*pyh,*pyl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ;
+ 188:trigo_fast.c  ****       }
+ 189:trigo_fast.c  ****      else 
+ 190:trigo_fast.c  ****        /* all this is exact but the rightmost multiplication */
+ 191:trigo_fast.c  ****        Add12Cond(*pyh,*pyl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
+ 192:trigo_fast.c  ****     }
+ 193:trigo_fast.c  ****   }
+ 194:trigo_fast.c  ****   else  if ( absxhi < XMAX_DDRR ) {
+ 195:trigo_fast.c  ****     long long int kl;
+ 196:trigo_fast.c  ****     double kch_h,kch_l, kcm_h,kcm_l,  th, tl;
+ 197:trigo_fast.c  ****     DOUBLE2LONGINT(kl, x*INV_PIO256);
+ 198:trigo_fast.c  ****     kd=(double)kl;
+ 199:trigo_fast.c  ****     k = (int) kl;
+ 200:trigo_fast.c  **** #if DEBUG
+ 201:trigo_fast.c  ****     printf("kl=%lld  \n", kl);
+ 202:trigo_fast.c  **** #endif
+ 203:trigo_fast.c  ****     if((k&127) == 0) { 
+ 204:trigo_fast.c  ****       scs_t X, Y,Yh,Yl;
+ 205:trigo_fast.c  ****       scs_set_d(X, x*128.0); 
+ 206:trigo_fast.c  ****       k= rem_pio2_scs(Y, X);
+ 207:trigo_fast.c  ****       /* TODO an optimized procedure for the following */
+ 208:trigo_fast.c  ****       scs_get_d(pyh, Y);
+ 209:trigo_fast.c  ****       scs_set_d(Yh, *pyh);
+ 210:trigo_fast.c  ****       scs_sub(Yl, Y,Yh);
+ 211:trigo_fast.c  ****       scs_get_d(pyl, Yl);
+ 212:trigo_fast.c  ****       *pyh = *pyh * (1./128.) ;
+ 213:trigo_fast.c  ****       *pyl = *pyl * (1./128.) ;
+ 214:trigo_fast.c  ****     } 
+ 215:trigo_fast.c  ****     else {
+ 216:trigo_fast.c  ****       /* all this is exact */
+ 217:trigo_fast.c  ****       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+ 218:trigo_fast.c  ****       Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+ 219:trigo_fast.c  ****       Add12 (th,tl,  kch_l, kcm_h) ;
+ 220:trigo_fast.c  ****       /* only rounding error in the last multiplication and addition */ 
+ 221:trigo_fast.c  ****       Add22 (pyh, pyl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+ 222:trigo_fast.c  ****     }
+ 223:trigo_fast.c  ****   }
+ 224:trigo_fast.c  ****   else {
+ 225:trigo_fast.c  ****     scs_t X, Y,Yh,Yl;
+ 226:trigo_fast.c  ****     if (absxhi > 0x7F700000) /*2^(1023-7)*/
+ 227:trigo_fast.c  ****       return (*scs_fun)(x);
+ 228:trigo_fast.c  ****     else {      
+ 229:trigo_fast.c  ****       scs_set_d(X, x*128.0); 
+ 230:trigo_fast.c  ****       k= rem_pio2_scs(Y, X);
+ 231:trigo_fast.c  ****       /* TODO an optimized procedure for the following */
+ 232:trigo_fast.c  ****       scs_get_d(pyh, Y);
+ 233:trigo_fast.c  ****       scs_set_d(Yh, *pyh);
+ 234:trigo_fast.c  ****       scs_sub(Yl, Y,Yh);
+ 235:trigo_fast.c  ****       scs_get_d(pyl, Yl);
+ 236:trigo_fast.c  ****       *pyh = *pyh * (1./128.) ;
+ 237:trigo_fast.c  ****       *pyl = *pyl * (1./128.) ;
+ 238:trigo_fast.c  ****     } 
+ 239:trigo_fast.c  ****   }
+ 240:trigo_fast.c  ****   printf("\n");
+ 241:trigo_fast.c  ****   return k;
+ 242:trigo_fast.c  **** }
+ 243:trigo_fast.c  **** 
+ 244:trigo_fast.c  **** 
+ 245:trigo_fast.c  **** 
+ 246:trigo_fast.c  **** 
+ 247:trigo_fast.c  **** 
+ 248:trigo_fast.c  **** 
+ 249:trigo_fast.c  **** 
+ 250:trigo_fast.c  **** 
+ 251:trigo_fast.c  **** /*************************************************************
+ 252:trigo_fast.c  ****  *************************************************************
+ 253:trigo_fast.c  ****  *              SIN ROUNDED  TO NEAREST			     *
+ 254:trigo_fast.c  ****  *************************************************************
+ 255:trigo_fast.c  ****  *************************************************************/ 
+ 256:trigo_fast.c  **** 
+ 257:trigo_fast.c  **** double sin_rn(double x){ 
+ 258:trigo_fast.c  ****   double sh, sl, yh, yl, ts;
+ 259:trigo_fast.c  ****   int quadrant;
+ 260:trigo_fast.c  ****   int k;
+ 261:trigo_fast.c  ****   int absxhi;
+ 262:trigo_fast.c  ****   db_number xx;
+ 263:trigo_fast.c  **** 
+ 264:trigo_fast.c  **** #if INLINE_SINCOS
+ 265:trigo_fast.c  ****   double sah,sal,cah,cal,tc;
+ 266:trigo_fast.c  **** #endif
+ 267:trigo_fast.c  **** 
+ 268:trigo_fast.c  ****   xx.d=x;
+ 269:trigo_fast.c  ****   absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
+ 270:trigo_fast.c  **** 
+ 271:trigo_fast.c  ****   if (absxhi < XMAX_SIN_FAST){
+ 272:trigo_fast.c  ****     if (absxhi <XMAX_RETURN_X_FOR_SIN)
+ 273:trigo_fast.c  ****       return x;
+ 274:trigo_fast.c  ****     /* Fast Taylor series */
+ 275:trigo_fast.c  ****     yh=x*x;
+ 276:trigo_fast.c  ****     ts = yh * (s3.d + yh*(s5.d + yh*(s7.d + yh*(s9.d))));
+ 277:trigo_fast.c  ****     Add12(sh,sl, x, ts*x);
+ 278:trigo_fast.c  ****     if(sh == (sh + (sl * RN_CST_SINFAST))){	
+ 279:trigo_fast.c  ****       return sh;
+ 280:trigo_fast.c  ****     }else{ 
+ 281:trigo_fast.c  ****       return scs_sin_rn(x); 
+ 282:trigo_fast.c  ****     } 
+ 283:trigo_fast.c  ****   }
+ 284:trigo_fast.c  ****   
+ 285:trigo_fast.c  ****   /* Otherwise : Range reduction then standard evaluation */
+ 286:trigo_fast.c  ****   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_sin_rn);
+ 287:trigo_fast.c  ****     
+ 288:trigo_fast.c  ****   /* Now y_h is in -Pi/512, Pi/512 and k holds the 32 lower bits of an
+ 289:trigo_fast.c  ****      int such that x = yh+yl + kPi/256 */
+ 290:trigo_fast.c  ****   
+ 291:trigo_fast.c  ****   quadrant = (k>>7)&3;
+ 292:trigo_fast.c  ****   k=(k&127)<<2;
+ 293:trigo_fast.c  ****   
+ 294:trigo_fast.c  ****   if(k<=(64<<2)) {
+ 295:trigo_fast.c  ****     sah=sincosTable[k+0].d; /* sin(a), high part */
+ 296:trigo_fast.c  ****     sal=sincosTable[k+1].d; /* sin(a), low part */
+ 297:trigo_fast.c  ****     cah=sincosTable[k+2].d; /* cos(a), high part */
+ 298:trigo_fast.c  ****     cal=sincosTable[k+3].d; /* cos(a), low part */
+ 299:trigo_fast.c  ****   } else { /* cah <= sah */
+ 300:trigo_fast.c  ****     int k1=(128<<2) - k;
+ 301:trigo_fast.c  ****     cah=sincosTable[k1+0].d; /* cos(a), high part */
+ 302:trigo_fast.c  ****     cal=sincosTable[k1+1].d; /* cos(a), low part  */ 
+ 303:trigo_fast.c  ****     sah=sincosTable[k1+2].d; /* sin(a), high part */
+ 304:trigo_fast.c  ****     sal=sincosTable[k1+3].d; /* sin(a), low part  */
+ 305:trigo_fast.c  ****   }
+ 306:trigo_fast.c  **** 
+ 307:trigo_fast.c  **** #if DEBUG
+ 308:trigo_fast.c  **** 	printf("sah=%1.30e sal=%1.30e  \n", sah,sal);
+ 309:trigo_fast.c  **** 	printf("cah=%1.30e cal=%1.30e  \n", cah,cal);
+ 310:trigo_fast.c  **** #endif
+ 311:trigo_fast.c  **** 
+ 312:trigo_fast.c  **** #if INLINE_SINCOS
+ 313:trigo_fast.c  ****   if (quadrant&1){   /*compute the cos  */
+ 314:trigo_fast.c  ****     DO_COS(sh,sl);
+ 315:trigo_fast.c  ****   }
+ 316:trigo_fast.c  ****   else {/* compute the sine */
+ 317:trigo_fast.c  ****     DO_SIN(sh,sl);
+ 318:trigo_fast.c  ****   }
+ 319:trigo_fast.c  **** #else
+ 320:trigo_fast.c  ****   if (quadrant&1)   /*compute the cos  */
+ 321:trigo_fast.c  ****     do_cos(&sh, &sl,  yh,yl);
+ 322:trigo_fast.c  ****   else /* compute the sine */
+ 323:trigo_fast.c  ****     do_sin(&sh, &sl,  yh,yl);
+ 324:trigo_fast.c  **** #endif
+ 325:trigo_fast.c  ****   
+ 326:trigo_fast.c  ****   if(quadrant>=2) { 
+ 327:trigo_fast.c  ****     sh = -sh;
+ 328:trigo_fast.c  ****     sl = -sl;
+ 329:trigo_fast.c  ****   }
+ 330:trigo_fast.c  ****   
+ 331:trigo_fast.c  ****   if(sh == (sh + (sl * 1.0004))){	
+ 332:trigo_fast.c  ****      return sh;
+ 333:trigo_fast.c  ****   }else{
+ 334:trigo_fast.c  ****     return scs_sin_rn(x); 
+ 335:trigo_fast.c  ****   } 
+ 336:trigo_fast.c  **** 
+ 337:trigo_fast.c  **** }
+ 338:trigo_fast.c  **** 
+ 339:trigo_fast.c  **** /* TODO */
+ 340:trigo_fast.c  **** double sin_rd(double x){
+ 341:trigo_fast.c  **** return scs_sin_rd(x);
+ 342:trigo_fast.c  **** }
+ 343:trigo_fast.c  **** 
+ 344:trigo_fast.c  **** /* TODO */
+ 345:trigo_fast.c  **** double sin_ru(double x){ 
+ 346:trigo_fast.c  **** return scs_sin_ru(x);
+ 347:trigo_fast.c  **** }
+ 348:trigo_fast.c  **** 
+ 349:trigo_fast.c  **** /* TODO */
+ 350:trigo_fast.c  **** double sin_rz(double x){ 
+ 351:trigo_fast.c  **** return scs_sin_rz(x);
+ 352:trigo_fast.c  **** }
+ 353:trigo_fast.c  **** 
+ 354:trigo_fast.c  **** /*************************************************************
+ 355:trigo_fast.c  ****  *************************************************************
+ 356:trigo_fast.c  ****  *              COS ROUNDED  TO NEAREST			     *
+ 357:trigo_fast.c  ****  *************************************************************
+ 358:trigo_fast.c  ****  *************************************************************/
+ 359:trigo_fast.c  **** double cos_rn(double x){ 
+ 360:trigo_fast.c  ****   double ch, cl, yh, yl,  tc;
+ 361:trigo_fast.c  ****   int quadrant;
+ 362:trigo_fast.c  ****   int k;
+ 363:trigo_fast.c  ****   int absxhi;
+ 364:trigo_fast.c  ****   db_number xx;
+ 365:trigo_fast.c  **** 
+ 366:trigo_fast.c  **** #if INLINE_SINCOS
+ 367:trigo_fast.c  ****   double sah,sal,cah,cal,ts;
+ 368:trigo_fast.c  **** #endif
+ 369:trigo_fast.c  **** 
+ 370:trigo_fast.c  ****   xx.d=x;
+ 371:trigo_fast.c  ****   absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
+ 372:trigo_fast.c  **** 
+ 373:trigo_fast.c  ****   if (absxhi < XMAX_COS_FAST){
+ 374:trigo_fast.c  ****     if (absxhi <XMAX_RETURN_1_FOR_COS)
+ 375:trigo_fast.c  ****       return 1.;
+ 376:trigo_fast.c  ****     /* Fast Taylor series */
+ 377:trigo_fast.c  ****     yh=x*x;
+ 378:trigo_fast.c  ****     tc = yh * (c2.d + yh*(c4.d + yh*(c6.d + yh*(c8.d))));
+ 379:trigo_fast.c  ****     Add12(ch,cl, 1, tc);
+ 380:trigo_fast.c  ****     if(ch == (ch + (cl * RN_CST_COSFAST))){	
+ 381:trigo_fast.c  ****       return ch;
+ 382:trigo_fast.c  ****     }else{ 
+ 383:trigo_fast.c  ****       return scs_cos_rn(x); 
+ 384:trigo_fast.c  ****     } 
+ 385:trigo_fast.c  ****   }
+ 386:trigo_fast.c  ****   
+ 387:trigo_fast.c  ****   /* Otherwise : Range reduction then standard evaluation */
+ 388:trigo_fast.c  ****   printf ("JUST BEFORE RANGEREDUCE!\n");
+ 389:trigo_fast.c  ****   printf ("x=%.20e absxhi=%i\n", x,absxhi);
+ 390:trigo_fast.c  ****   //yh=0.0; yl=0.0; // Doesn't matter
+ 391:trigo_fast.c  ****   printf ("yh=%.20e, yl=%.20e\n", yh,yl);
+ 392:trigo_fast.c  ****   printf ("\n");
+ 393:trigo_fast.c  **** 
+ 394:trigo_fast.c  ****   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
+ 395:trigo_fast.c  ****   
+ 396:trigo_fast.c  ****   printf ("JUST AFTER RANGEREDUCE!\n");  
+ 397:trigo_fast.c  ****   printf ("x=%.20e absxhi=%i\n", x,absxhi);
+ 398:trigo_fast.c  ****   printf ("yh=%.20e, yl=%.20e\n", yh,yl);
+ 399:trigo_fast.c  ****   printf ("\n");
+ 400:trigo_fast.c  **** 
+ 401:trigo_fast.c  ****   /* Now y_h is in -Pi/512, Pi/512 and k holds the 32 lower bits of an
+ 402:trigo_fast.c  ****      int such that x = yh+yl + kPi/256 */
+ 403:trigo_fast.c  ****   
+ 404:trigo_fast.c  ****   quadrant = (k>>7)&3;
+ 405:trigo_fast.c  ****   k=(k&127)<<2;
+ 406:trigo_fast.c  ****   
+ 407:trigo_fast.c  ****   if(k<=(64<<2)) {
+ 408:trigo_fast.c  ****     sah=sincosTable[k+0].d; /* sin(a), high part */
+ 409:trigo_fast.c  ****     sal=sincosTable[k+1].d; /* sin(a), low part */
+ 410:trigo_fast.c  ****     cah=sincosTable[k+2].d; /* cos(a), high part */
+ 411:trigo_fast.c  ****     cal=sincosTable[k+3].d; /* cos(a), low part */
+ 412:trigo_fast.c  ****   } else { /* cah <= sah */
+ 413:trigo_fast.c  ****     int k1=(128<<2) - k;
+ 414:trigo_fast.c  ****     cah=sincosTable[k1+0].d; /* cos(a), high part */
+ 415:trigo_fast.c  ****     cal=sincosTable[k1+1].d; /* cos(a), low part  */ 
+ 416:trigo_fast.c  ****     sah=sincosTable[k1+2].d; /* sin(a), high part */
+ 417:trigo_fast.c  ****     sal=sincosTable[k1+3].d; /* sin(a), low part  */
+ 418:trigo_fast.c  ****   }
+ 419:trigo_fast.c  **** 
+ 420:trigo_fast.c  **** 
+ 421:trigo_fast.c  **** #if INLINE_SINCOS
+ 422:trigo_fast.c  ****   if (quadrant&1){   /*compute the cos  */
+ 423:trigo_fast.c  ****     DO_SIN(ch,cl);
+ 424:trigo_fast.c  ****   }
+ 425:trigo_fast.c  ****   else {/* compute the sine */
+ 426:trigo_fast.c  ****     DO_COS(ch,cl);
+ 427:trigo_fast.c  ****   }
+ 428:trigo_fast.c  **** #else
+ 429:trigo_fast.c  ****   if (quadrant&1)   /*compute the cos  */
+ 430:trigo_fast.c  ****     do_sin(&ch, &cl,  yh,yl);
+ 431:trigo_fast.c  ****   else /* compute the sine */
+ 432:trigo_fast.c  ****     do_cos(&ch, &cl,  yh,yl);
+ 433:trigo_fast.c  **** #endif
+ 434:trigo_fast.c  ****   
+ 435:trigo_fast.c  ****   if((quadrant == 1)||(quadrant == 2)) { 
+ 436:trigo_fast.c  ****     ch = -ch;
+ 437:trigo_fast.c  ****     cl = -cl;
+ 438:trigo_fast.c  ****   }
+ 439:trigo_fast.c  ****   
+ 440:trigo_fast.c  ****   if(ch == (ch + (cl * 1.0004))){	
+ 441:trigo_fast.c  ****      return ch;
+ 442:trigo_fast.c  ****   }else{
+ 443:trigo_fast.c  ****     return scs_cos_rn(x); 
+ 444:trigo_fast.c  ****   } 
+ 445:trigo_fast.c  **** 
+ 446:trigo_fast.c  **** }
+ 447:trigo_fast.c  **** 
+ 448:trigo_fast.c  **** 
+ 449:trigo_fast.c  **** /* TODO */
+ 450:trigo_fast.c  **** double cos_rd(double x){
+ 451:trigo_fast.c  **** return scs_cos_rd(x);
+ 452:trigo_fast.c  **** }
+ 453:trigo_fast.c  **** 
+ 454:trigo_fast.c  **** /* TODO */
+ 455:trigo_fast.c  **** double cos_ru(double x){ 
+ 456:trigo_fast.c  **** return scs_cos_ru(x);
+ 457:trigo_fast.c  **** }
+ 458:trigo_fast.c  **** 
+ 459:trigo_fast.c  **** /* TODO */
+ 460:trigo_fast.c  **** double cos_rz(double x){ 
+ 461:trigo_fast.c  **** return scs_cos_rz(x);
+ 462:trigo_fast.c  **** }
+ 463:trigo_fast.c  **** 
+ 464:trigo_fast.c  **** /*************************************************************
+ 465:trigo_fast.c  ****  *************************************************************
+ 466:trigo_fast.c  ****  *              TAN ROUNDED  TO NEAREST			     *
+ 467:trigo_fast.c  ****  *************************************************************
+ 468:trigo_fast.c  ****  *************************************************************/ 
+ 469:trigo_fast.c  **** double tan_rn(double x){  
+ 470:trigo_fast.c  ****   double reshi, reslo, sh, sl, ch, cl, kd, yh, yl;
+ 471:trigo_fast.c  ****   db_number y;
+ 472:trigo_fast.c  ****   int k, quadrant;
+ 473:trigo_fast.c  **** 
+ 474:trigo_fast.c  **** 
+ 475:trigo_fast.c  ****   int absxhi;
+ 476:trigo_fast.c  ****   db_number xx;
+ 477:trigo_fast.c  **** 
+ 478:trigo_fast.c  **** #if INLINE_SINCOS
+ 479:trigo_fast.c  ****   double sah,sal,cah,cal,ts,tc;
+ 480:trigo_fast.c  **** #endif
+ 481:trigo_fast.c  **** 
+ 482:trigo_fast.c  ****   xx.d=x;
+ 483:trigo_fast.c  ****   absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
+ 484:trigo_fast.c  **** 
+ 485:trigo_fast.c  ****   /* x < 2^-26  => tan(x)~x with accuracy 2^-53.2 */
+ 486:trigo_fast.c  ****   y.d = x;
+ 487:trigo_fast.c  ****     if((y.i[HI_ENDIAN]&0x7FFFFFFF) < 0x3E4BEAD3){	/* Test if |x| < (1+e)2^(-26) */
+ 488:trigo_fast.c  ****     #if DEBUG
+ 489:trigo_fast.c  ****       printf("x est plus petit que 2^-26(1+e)\n");
+ 490:trigo_fast.c  ****     #endif
+ 491:trigo_fast.c  ****       return x;
+ 492:trigo_fast.c  ****     }
+ 493:trigo_fast.c  **** 
+ 494:trigo_fast.c  ****     /*TODO Add polynomial for small values here */ 
+ 495:trigo_fast.c  ****   
+ 496:trigo_fast.c  ****   /* Otherwise : Range reduction then standard evaluation */
+ 497:trigo_fast.c  ****   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
+ 498:trigo_fast.c  **** 
+ 499:trigo_fast.c  ****   quadrant = (k>>7)&3;	/* Pi is divided in 4 quarters */	
+ 500:trigo_fast.c  ****   kd = (double) k;
+ 501:trigo_fast.c  ****   k=(k&127)<<2;
+ 502:trigo_fast.c  **** 
+ 503:trigo_fast.c  ****   switch (quadrant){
+ 504:trigo_fast.c  ****    case(0):
+ 505:trigo_fast.c  ****     #if DEBUG
+ 506:trigo_fast.c  ****       printf("Case 0\n");
+ 507:trigo_fast.c  ****     #endif
+ 508:trigo_fast.c  ****    if(k<=(64<<2)) {  /* sah <= cah */
+ 509:trigo_fast.c  ****     sah=sincosTable[k].d; /* sin(a), high part */
+ 510:trigo_fast.c  ****     sal=sincosTable[k+1].d; /* sin(a), low part */
+ 511:trigo_fast.c  ****     cah=sincosTable[k+2].d; /* cos(a), high part */
+ 512:trigo_fast.c  ****     cal=sincosTable[k+3].d; /* cos(a), low part */
+ 513:trigo_fast.c  ****   } else { /* cah <= sah */
+ 514:trigo_fast.c  ****     int k1=(128<<2) - k;
+ 515:trigo_fast.c  ****     cah=sincosTable[k1].d; 
+ 516:trigo_fast.c  ****     cal=sincosTable[k1+1].d;
+ 517:trigo_fast.c  ****     sah=sincosTable[k1+2].d;
+ 518:trigo_fast.c  ****     sal=sincosTable[k1+3].d;
+ 519:trigo_fast.c  ****   }     
+ 520:trigo_fast.c  ****      break;
+ 521:trigo_fast.c  ****    case(1):
+ 522:trigo_fast.c  ****     #if DEBUG
+ 523:trigo_fast.c  ****       printf("Case 1\n");
+ 524:trigo_fast.c  ****     #endif
+ 525:trigo_fast.c  ****      if(k<=(64<<2)) {  /* sah <= cah */
+ 526:trigo_fast.c  ****     cah=-sincosTable[k].d; /* sin(a), high part */
+ 527:trigo_fast.c  ****     cal=-sincosTable[k+1].d; /* sin(a), low part */
+ 528:trigo_fast.c  ****     sah=sincosTable[k+2].d; /* cos(a), high part */
+ 529:trigo_fast.c  ****     sal=sincosTable[k+3].d; /* cos(a), low part */
+ 530:trigo_fast.c  ****   } else { /* cah <= sah */
+ 531:trigo_fast.c  ****     int k1=(128<<2) - k;
+ 532:trigo_fast.c  ****     sah=sincosTable[k1].d; 
+ 533:trigo_fast.c  ****     sal=sincosTable[k1+1].d;
+ 534:trigo_fast.c  ****     cah=-sincosTable[k1+2].d;
+ 535:trigo_fast.c  ****     cal=-sincosTable[k1+3].d;
+ 536:trigo_fast.c  ****   }    
+ 537:trigo_fast.c  ****      break;
+ 538:trigo_fast.c  ****    case(2):
+ 539:trigo_fast.c  ****       if(k<=(64<<2)) {  /* sah <= cah */
+ 540:trigo_fast.c  ****     sah=-sincosTable[k].d; /* sin(a), high part */
+ 541:trigo_fast.c  ****     sal=-sincosTable[k+1].d; /* sin(a), low part */
+ 542:trigo_fast.c  ****     cah=-sincosTable[k+2].d; /* cos(a), high part */
+ 543:trigo_fast.c  ****     cal=-sincosTable[k+3].d; /* cos(a), low part */
+ 544:trigo_fast.c  ****   } else { /* cah <= sah */
+ 545:trigo_fast.c  ****     int k1=(128<<2) - k;
+ 546:trigo_fast.c  ****     cah=-sincosTable[k1].d; 
+ 547:trigo_fast.c  ****     cal=-sincosTable[k1+1].d;
+ 548:trigo_fast.c  ****     sah=-sincosTable[k1+2].d;
+ 549:trigo_fast.c  ****     sal=-sincosTable[k1+3].d;
+ 550:trigo_fast.c  ****   }    
+ 551:trigo_fast.c  ****    break;
+ 552:trigo_fast.c  ****       case(3):
+ 553:trigo_fast.c  ****      if(k<=(64<<2)) {  /* sah <= cah */
+ 554:trigo_fast.c  ****     cah=sincosTable[k].d ; /* sin(a), high part */
+ 555:trigo_fast.c  ****     cal=sincosTable[k+1].d; /* sin(a), low part */
+ 556:trigo_fast.c  ****     sah=-sincosTable[k+2].d; /* cos(a), high part */
+ 557:trigo_fast.c  ****     sal=-sincosTable[k+3].d; /* cos(a), low part */
+ 558:trigo_fast.c  ****   } else { /* cah <= sah */
+ 559:trigo_fast.c  ****     int k1=(128<<2) - k;
+ 560:trigo_fast.c  ****     sah=-sincosTable[k1].d ; 
+ 561:trigo_fast.c  ****     sal=-sincosTable[k1+1].d;
+ 562:trigo_fast.c  ****     cah=sincosTable[k1+2].d;
+ 563:trigo_fast.c  ****     cal=sincosTable[k1+3].d;
+ 564:trigo_fast.c  ****   }    
+ 565:trigo_fast.c  ****      break;   
+ 566:trigo_fast.c  ****    default:
+ 567:trigo_fast.c  ****      fprintf(stderr,"ERREUR: %d is not a valid value in sn_tan \n", quadrant);
+ 568:trigo_fast.c  ****      return 0.0;
+ 569:trigo_fast.c  ****   }
+ 570:trigo_fast.c  **** 
+ 571:trigo_fast.c  **** #if INLINE_SINCOS
+ 572:trigo_fast.c  **** DO_SIN(sh,sl);
+ 573:trigo_fast.c  **** DO_COS(ch,cl);
+ 574:trigo_fast.c  **** #else  
+ 575:trigo_fast.c  ****   do_sin(&sh, &sl, yh, yl);
+ 576:trigo_fast.c  ****   do_cos(&ch, &cl, yh, yl);
+ 577:trigo_fast.c  **** #endif
+ 578:trigo_fast.c  **** 
+ 579:trigo_fast.c  ****    Div22(&reshi, &reslo, sh, sl, ch, cl);
+ 580:trigo_fast.c  **** 
+ 581:trigo_fast.c  ****   /* ROUNDING TO NEAREST */
+ 582:trigo_fast.c  ****  
+ 583:trigo_fast.c  ****   if(reshi == (reshi + (reslo * 1.0004))){
+ 584:trigo_fast.c  ****     return reshi;
+ 585:trigo_fast.c  ****   }else{ 
+ 586:trigo_fast.c  ****     return scs_tan_rn(x); 
+ 587:trigo_fast.c  ****   } 
+ 588:trigo_fast.c  **** 
+ 589:trigo_fast.c  **** }
+ 590:trigo_fast.c  **** 
+ 591:trigo_fast.c  **** 
+ 592:trigo_fast.c  **** /*************************************************************
+ 593:trigo_fast.c  ****  *************************************************************
+ 594:trigo_fast.c  ****  *               ROUNDED  TOWARD  -INFINITY
+ 595:trigo_fast.c  ****  *************************************************************
+ 596:trigo_fast.c  ****  *************************************************************/
+ 597:trigo_fast.c  **** /* TODO */
+ 598:trigo_fast.c  **** double tan_rd(double x){  
+ 599:trigo_fast.c  **** return scs_tan_rd(x);
+ 600:trigo_fast.c  ****  }
+ 601:trigo_fast.c  **** 
+ 602:trigo_fast.c  **** /*************************************************************
+ 603:trigo_fast.c  ****  *************************************************************
+ 604:trigo_fast.c  ****  *               ROUNDED  TOWARD  +INFINITY
+ 605:trigo_fast.c  ****  *************************************************************
+ 606:trigo_fast.c  ****  *************************************************************/
+ 607:trigo_fast.c  **** /* TODO */
+ 608:trigo_fast.c  **** double tan_ru(double x){  
+ 609:trigo_fast.c  **** return scs_tan_ru(x);
+ 610:trigo_fast.c  ****  }
+ 611:trigo_fast.c  **** 
+ 612:trigo_fast.c  **** /*************************************************************
+ 613:trigo_fast.c  ****  *************************************************************
+ 614:trigo_fast.c  ****  *               ROUNDED  TOWARD  ZERO
+ 615:trigo_fast.c  ****  *************************************************************
+ 616:trigo_fast.c  ****  *************************************************************/
+ 617:trigo_fast.c  **** /* TODO */
+ 618:trigo_fast.c  **** double tan_rz(double x){  
+ 401              		.loc 1 619 0
+ 402              		.cfi_startproc
+ 403              	.LVL66:
+ 404 0258 55       		pushl	%ebp	#
+ 405              		.cfi_def_cfa_offset 8
+ 406              		.cfi_offset 5, -8
+ 407 0259 89E5     		movl	%esp, %ebp	#,
+ 408              		.cfi_def_cfa_register 5
+ 409 025b 53       		pushl	%ebx	#
+ 410 025c 83EC14   		subl	$20, %esp	#,
+ 411              		.cfi_offset 3, -12
+ 412 025f E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 412      FF
+ 413 0264 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 413      0000
+ 619:trigo_fast.c  **** return scs_tan_rz(x);
+ 414              		.loc 1 620 0
+ 415 026a DD4508   		fldl	8(%ebp)	# x
+ 416 026d DD1C24   		fstpl	(%esp)	#
+ 417 0270 E8FCFFFF 		call	scs_tan_rz@PLT	#
+ 417      FF
+ 620:trigo_fast.c  ****  }
+ 418              		.loc 1 621 0
+ 419 0275 83C414   		addl	$20, %esp	#,
+ 420 0278 5B       		popl	%ebx	#
+ 421              		.cfi_restore 3
+ 422 0279 5D       		popl	%ebp	#
+ 423              		.cfi_restore 5
+ 424              		.cfi_def_cfa 4, 4
+ 425 027a C3       		ret
+ 426              		.cfi_endproc
+ 427              	.LFE21:
+ 429              	.globl tan_ru
+ 431              	tan_ru:
+ 432              	.LFB20:
+ 609:trigo_fast.c  **** double tan_ru(double x){  
+ 433              		.loc 1 609 0
+ 434              		.cfi_startproc
+ 435              	.LVL67:
+ 436 027b 55       		pushl	%ebp	#
+ 437              		.cfi_def_cfa_offset 8
+ 438              		.cfi_offset 5, -8
+ 439 027c 89E5     		movl	%esp, %ebp	#,
+ 440              		.cfi_def_cfa_register 5
+ 441 027e 53       		pushl	%ebx	#
+ 442 027f 83EC14   		subl	$20, %esp	#,
+ 443              		.cfi_offset 3, -12
+ 444 0282 E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 444      FF
+ 445 0287 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 445      0000
+ 610:trigo_fast.c  **** return scs_tan_ru(x);
+ 446              		.loc 1 610 0
+ 447 028d DD4508   		fldl	8(%ebp)	# x
+ 448 0290 DD1C24   		fstpl	(%esp)	#
+ 449 0293 E8FCFFFF 		call	scs_tan_ru@PLT	#
+ 449      FF
+ 611:trigo_fast.c  ****  }
+ 450              		.loc 1 611 0
+ 451 0298 83C414   		addl	$20, %esp	#,
+ 452 029b 5B       		popl	%ebx	#
+ 453              		.cfi_restore 3
+ 454 029c 5D       		popl	%ebp	#
+ 455              		.cfi_restore 5
+ 456              		.cfi_def_cfa 4, 4
+ 457 029d C3       		ret
+ 458              		.cfi_endproc
+ 459              	.LFE20:
+ 461              	.globl tan_rd
+ 463              	tan_rd:
+ 464              	.LFB19:
+ 599:trigo_fast.c  **** double tan_rd(double x){  
+ 465              		.loc 1 599 0
+ 466              		.cfi_startproc
+ 467              	.LVL68:
+ 468 029e 55       		pushl	%ebp	#
+ 469              		.cfi_def_cfa_offset 8
+ 470              		.cfi_offset 5, -8
+ 471 029f 89E5     		movl	%esp, %ebp	#,
+ 472              		.cfi_def_cfa_register 5
+ 473 02a1 53       		pushl	%ebx	#
+ 474 02a2 83EC14   		subl	$20, %esp	#,
+ 475              		.cfi_offset 3, -12
+ 476 02a5 E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 476      FF
+ 477 02aa 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 477      0000
+ 600:trigo_fast.c  **** return scs_tan_rd(x);
+ 478              		.loc 1 600 0
+ 479 02b0 DD4508   		fldl	8(%ebp)	# x
+ 480 02b3 DD1C24   		fstpl	(%esp)	#
+ 481 02b6 E8FCFFFF 		call	scs_tan_rd@PLT	#
+ 481      FF
+ 601:trigo_fast.c  ****  }
+ 482              		.loc 1 601 0
+ 483 02bb 83C414   		addl	$20, %esp	#,
+ 484 02be 5B       		popl	%ebx	#
+ 485              		.cfi_restore 3
+ 486 02bf 5D       		popl	%ebp	#
+ 487              		.cfi_restore 5
+ 488              		.cfi_def_cfa 4, 4
+ 489 02c0 C3       		ret
+ 490              		.cfi_endproc
+ 491              	.LFE19:
+ 493              		.section	.rodata.str1.1,"aMS",@progbits,1
+ 494              	.LC3:
+ 495 0000 496E7369 		.string	"Inside range reduction!"
+ 495      64652072 
+ 495      616E6765 
+ 495      20726564 
+ 495      75637469 
+ 496              	.LC4:
+ 497 0018 783D252E 		.string	"x=%.20e absxhi=%i\n"
+ 497      32306520 
+ 497      61627378 
+ 497      68693D25 
+ 497      690A00
+ 498              	.LC5:
+ 499 002b 7079683D 		.string	"pyh=%.20e, pyl=%.20e\n"
+ 499      252E3230 
+ 499      652C2070 
+ 499      796C3D25 
+ 499      2E323065 
+ 500              	.LC6:
+ 501 0041 584D4158 		.string	"XMAX_CODY_WAITE_3=%i\n"
+ 501      5F434F44 
+ 501      595F5741 
+ 501      4954455F 
+ 501      333D2569 
+ 502              	.LC8:
+ 503 0057 494E565F 		.string	"INV_PIO256       =%.20e\n"
+ 503      50494F32 
+ 503      35362020 
+ 503      20202020 
+ 503      203D252E 
+ 504              	.LC10:
+ 505 0070 52525F44 		.string	"RR_DD_MCH        =%.20e\n"
+ 505      445F4D43 
+ 505      48202020 
+ 505      20202020 
+ 505      203D252E 
+ 506              	.LC12:
+ 507 0089 6B3D2569 		.string	"k=%i\n"
+ 507      0A00
+ 508              	.LC13:
+ 509 008f 6B643D25 		.string	"kd=%.20e\n"
+ 509      2E323065 
+ 509      0A00
+ 510              	.LC14:
+ 511 0099 59455320 		.string	"YES (k&127) == 0"
+ 511      286B2631 
+ 511      32372920 
+ 511      3D3D2030 
+ 511      00
+ 512              		.section	.rodata.str1.4,"aMS",@progbits,1
+ 513              		.align 4
+ 514              	.LC15:
+ 515 0000 6B63685F 		.string	"kch_h=%.20e kch_l=%.20e kd=%.20e\n\n"
+ 515      683D252E 
+ 515      32306520 
+ 515      6B63685F 
+ 515      6C3D252E 
+ 516 0023 00       		.align 4
+ 517              	.LC18:
+ 518 0024 6B63685F 		.string	"kch_h=%.20e kch_l=%.20e kd=%.20e\n"
+ 518      683D252E 
+ 518      32306520 
+ 518      6B63685F 
+ 518      6C3D252E 
+ 519 0046 0000     		.align 4
+ 520              	.LC19:
+ 521 0048 6B636D5F 		.string	"kcm_h=%.20e kcm_l=%.20e kd=%.20e\n\n"
+ 521      683D252E 
+ 521      32306520 
+ 521      6B636D5F 
+ 521      6C3D252E 
+ 522              		.text
+ 524              	trig_range_reduction:
+ 525              	.LFB9:
+ 145:trigo_fast.c  **** 				double (*scs_fun)(double)   ) {
+ 526              		.loc 1 145 0
+ 527              		.cfi_startproc
+ 528              	.LVL69:
+ 529 02c1 55       		pushl	%ebp	#
+ 530              		.cfi_def_cfa_offset 8
+ 531              		.cfi_offset 5, -8
+ 532 02c2 89E5     		movl	%esp, %ebp	#,
+ 533              		.cfi_def_cfa_register 5
+ 534 02c4 57       		pushl	%edi	#
+ 535 02c5 56       		pushl	%esi	#
+ 536 02c6 53       		pushl	%ebx	#
+ 537 02c7 81EC0C02 		subl	$524, %esp	#,
+ 537      0000
+ 538              		.cfi_offset 3, -20
+ 539              		.cfi_offset 6, -16
+ 540              		.cfi_offset 7, -12
+ 541 02cd E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 541      FF
+ 542 02d2 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 542      0000
+ 543 02d8 89C7     		movl	%eax, %edi	# pyh, pyh
+ 544 02da 899544FE 		movl	%edx, -444(%ebp)	# pyl, %sfp
+ 544      FFFF
+ 545 02e0 DD4508   		fldl	8(%ebp)	# x
+ 546 02e3 DD9D50FE 		fstpl	-432(%ebp)	# %sfp
+ 546      FFFF
+ 547 02e9 8B7510   		movl	16(%ebp), %esi	# absxhi, absxhi
+ 146:trigo_fast.c  ****   printf ("Inside range reduction!\n");
+ 548              		.loc 1 146 0
+ 549 02ec 8D830000 		leal	.LC3@GOTOFF(%ebx), %eax	#, tmp103
+ 549      0000
+ 550              	.LVL70:
+ 551 02f2 890424   		movl	%eax, (%esp)	# tmp103,
+ 552 02f5 E8FCFFFF 		call	puts@PLT	#
+ 552      FF
+ 553              	.LVL71:
+ 147:trigo_fast.c  ****   printf ("x=%.20e absxhi=%i\n", x,absxhi);
+ 554              		.loc 1 147 0
+ 555 02fa 8974240C 		movl	%esi, 12(%esp)	# absxhi,
+ 556 02fe DD8550FE 		fldl	-432(%ebp)	# %sfp
+ 556      FFFF
+ 557 0304 DD5C2404 		fstpl	4(%esp)	#
+ 558 0308 8D830000 		leal	.LC4@GOTOFF(%ebx), %eax	#, tmp104
+ 558      0000
+ 559 030e 890424   		movl	%eax, (%esp)	# tmp104,
+ 560 0311 E8FCFFFF 		call	printf@PLT	#
+ 560      FF
+ 148:trigo_fast.c  ****   printf ("pyh=%.20e, pyl=%.20e\n", *pyh,*pyl);
+ 561              		.loc 1 148 0
+ 562 0316 8B8544FE 		movl	-444(%ebp), %eax	# %sfp,
+ 562      FFFF
+ 563 031c DD00     		fldl	(%eax)	#
+ 564 031e DD5C240C 		fstpl	12(%esp)	#
+ 565 0322 DD07     		fldl	(%edi)	#* pyh
+ 566 0324 DD5C2404 		fstpl	4(%esp)	#
+ 567 0328 8D830000 		leal	.LC5@GOTOFF(%ebx), %eax	#, tmp107
+ 567      0000
+ 568 032e 890424   		movl	%eax, (%esp)	# tmp107,
+ 569 0331 E8FCFFFF 		call	printf@PLT	#
+ 569      FF
+ 149:trigo_fast.c  ****   printf ("XMAX_CODY_WAITE_3=%i\n",XMAX_CODY_WAITE_3);
+ 570              		.loc 1 149 0
+ 571 0336 C7442404 		movl	$1098457595, 4(%esp)	#,
+ 571      FB217941 
+ 572 033e 8D830000 		leal	.LC6@GOTOFF(%ebx), %eax	#, tmp108
+ 572      0000
+ 573 0344 890424   		movl	%eax, (%esp)	# tmp108,
+ 574 0347 E8FCFFFF 		call	printf@PLT	#
+ 574      FF
+ 150:trigo_fast.c  ****   printf ("INV_PIO256       =%.20e\n",INV_PIO256);
+ 575              		.loc 1 150 0
+ 576 034c DD830000 		fldl	.LC7@GOTOFF(%ebx)	#
+ 576      0000
+ 577 0352 DD5C2404 		fstpl	4(%esp)	#
+ 578 0356 8D830000 		leal	.LC8@GOTOFF(%ebx), %eax	#, tmp110
+ 578      0000
+ 579 035c 890424   		movl	%eax, (%esp)	# tmp110,
+ 580 035f E8FCFFFF 		call	printf@PLT	#
+ 580      FF
+ 151:trigo_fast.c  ****   printf ("RR_DD_MCH        =%.20e\n",RR_DD_MCH);
+ 581              		.loc 1 151 0
+ 582 0364 DD830000 		fldl	.LC9@GOTOFF(%ebx)	#
+ 582      0000
+ 583 036a DD5C2404 		fstpl	4(%esp)	#
+ 584 036e 8D830000 		leal	.LC10@GOTOFF(%ebx), %eax	#, tmp112
+ 584      0000
+ 585 0374 890424   		movl	%eax, (%esp)	# tmp112,
+ 586 0377 E8FCFFFF 		call	printf@PLT	#
+ 586      FF
+ 154:trigo_fast.c  ****   if  (absxhi < XMAX_CODY_WAITE_3) {
+ 587              		.loc 1 154 0
+ 588 037c 81FEFA21 		cmpl	$1098457594, %esi	#, absxhi
+ 588      7941
+ 589 0382 0F8FED02 		jg	.L22	#,
+ 589      0000
+ 590              	.LBB30:
+ 155:trigo_fast.c  ****     DOUBLE2INT(k, x * INV_PIO256);
+ 591              		.loc 1 155 0
+ 592 0388 DD8550FE 		fldl	-432(%ebp)	# %sfp
+ 592      FFFF
+ 593 038e DC8B0000 		fmull	.LC7@GOTOFF(%ebx)	#
+ 593      0000
+ 594 0394 D8830000 		fadds	.LC11@GOTOFF(%ebx)	#
+ 594      0000
+ 595 039a DD9D38FE 		fstpl	-456(%ebp)	# %sfp
+ 595      FFFF
+ 596 03a0 8B8538FE 		movl	-456(%ebp), %eax	# %sfp,
+ 596      FFFF
+ 597 03a6 898548FE 		movl	%eax, -440(%ebp)	#, %sfp
+ 597      FFFF
+ 598              	.LVL72:
+ 599              	.LBE30:
+ 156:trigo_fast.c  ****     printf("k=%i\n", k);
+ 600              		.loc 1 156 0
+ 601 03ac 89442404 		movl	%eax, 4(%esp)	#,
+ 602 03b0 8D830000 		leal	.LC12@GOTOFF(%ebx), %eax	#, tmp118
+ 602      0000
+ 603 03b6 890424   		movl	%eax, (%esp)	# tmp118,
+ 604 03b9 E8FCFFFF 		call	printf@PLT	#
+ 604      FF
+ 157:trigo_fast.c  ****     kd = (double) k;
+ 605              		.loc 1 157 0
+ 606 03be DB8548FE 		fildl	-440(%ebp)	# %sfp
+ 606      FFFF
+ 607 03c4 DD9538FE 		fstl	-456(%ebp)	# %sfp
+ 607      FFFF
+ 608              	.LVL73:
+ 158:trigo_fast.c  ****     printf("kd=%.20e\n", kd);
+ 609              		.loc 1 158 0
+ 610 03ca DD5C2404 		fstpl	4(%esp)	#
+ 611 03ce 8D830000 		leal	.LC13@GOTOFF(%ebx), %eax	#, tmp119
+ 611      0000
+ 612 03d4 890424   		movl	%eax, (%esp)	# tmp119,
+ 613 03d7 E8FCFFFF 		call	printf@PLT	#
+ 613      FF
+ 614              	.LVL74:
+ 159:trigo_fast.c  ****     if(((k&127) == 0)) { 
+ 615              		.loc 1 159 0
+ 616 03dc F68548FE 		testb	$127, -440(%ebp)	#, %sfp
+ 616      FFFF7F
+ 617 03e3 0F85C701 		jne	.L23	#,
+ 617      0000
+ 618              	.LBB31:
+ 160:trigo_fast.c  ****       printf("YES (k&127) == 0\n");
+ 619              		.loc 1 160 0
+ 620 03e9 8D830000 		leal	.LC14@GOTOFF(%ebx), %eax	#, tmp121
+ 620      0000
+ 621 03ef 890424   		movl	%eax, (%esp)	# tmp121,
+ 622 03f2 E8FCFFFF 		call	puts@PLT	#
+ 622      FF
+ 623              	.LVL75:
+ 171:trigo_fast.c  ****       printf("kch_h=%.20e kch_l=%.20e kd=%.20e\n\n",kch_h,kch_l,kd);
+ 624              		.loc 1 171 0
+ 625 03f7 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 625      FFFF
+ 626 03fd DD5C2414 		fstpl	20(%esp)	#
+ 627 0401 D9EE     		fldz
+ 628 0403 DD54240C 		fstl	12(%esp)	#
+ 629 0407 DD5C2404 		fstpl	4(%esp)	#
+ 630 040b 8D830000 		leal	.LC15@GOTOFF(%ebx), %eax	#, tmp124
+ 630      0000
+ 631 0411 890424   		movl	%eax, (%esp)	# tmp124,
+ 632 0414 E8FCFFFF 		call	printf@PLT	#
+ 632      FF
+ 633              	.LVL76:
+ 634              	.LBB32:
+ 172:trigo_fast.c  ****       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+ 635              		.loc 1 172 0
+ 636 0419 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 636      FFFF
+ 637 041f DC8B0000 		fmull	.LC1@GOTOFF(%ebx)	#
+ 637      0000
+ 638              	.LVL77:
+ 639 0425 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 639      FFFF
+ 640              	.LVL78:
+ 641 042b D8E1     		fsub	%st(1), %st	#,
+ 642 042d DEC1     		faddp	%st, %st(1)	#,
+ 643 042f DD9530FE 		fstl	-464(%ebp)	# %sfp
+ 643      FFFF
+ 644              	.LVL79:
+ 645 0435 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 645      FFFF
+ 646              	.LVL80:
+ 647 043b DEE1     		fsubp	%st, %st(1)	#,
+ 648 043d DD9D18FE 		fstpl	-488(%ebp)	# %sfp
+ 648      FFFF
+ 649              	.LVL81:
+ 650 0443 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 650      FFFF
+ 651 0449 DC8B0000 		fmull	.LC9@GOTOFF(%ebx)	#
+ 651      0000
+ 652 044f DD9D20FE 		fstpl	-480(%ebp)	# %sfp
+ 652      FFFF
+ 653              	.LVL82:
+ 654 0455 DD830000 		fldl	.LC16@GOTOFF(%ebx)	#
+ 654      0000
+ 655              	.LVL83:
+ 656 045b DD8530FE 		fldl	-464(%ebp)	# %sfp
+ 656      FFFF
+ 657 0461 D8C9     		fmul	%st(1), %st	#,
+ 658 0463 DCA520FE 		fsubl	-480(%ebp)	# %sfp
+ 658      FFFF
+ 659 0469 D9830000 		flds	.LC17@GOTOFF(%ebx)	#
+ 659      0000
+ 660 046f DD8530FE 		fldl	-464(%ebp)	# %sfp
+ 660      FFFF
+ 661 0475 D8C9     		fmul	%st(1), %st	#,
+ 662 0477 DEC2     		faddp	%st, %st(2)	#,
+ 663 0479 D9CA     		fxch	%st(2)	#
+ 664 047b DC8D18FE 		fmull	-488(%ebp)	# %sfp
+ 664      FFFF
+ 665 0481 DEC1     		faddp	%st, %st(1)	#,
+ 666 0483 D9C9     		fxch	%st(1)	#
+ 667 0485 DC8D18FE 		fmull	-488(%ebp)	# %sfp
+ 667      FFFF
+ 668 048b DEC1     		faddp	%st, %st(1)	#,
+ 669 048d DD9528FE 		fstl	-472(%ebp)	# %sfp
+ 669      FFFF
+ 670              	.LVL84:
+ 671              	.LBE32:
+ 173:trigo_fast.c  ****       printf("kch_h=%.20e kch_l=%.20e kd=%.20e\n",kch_h,kch_l,kd);//KCH_L is quite different!
+ 672              		.loc 1 173 0
+ 673 0493 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 673      FFFF
+ 674              	.LVL85:
+ 675 0499 DD5C2414 		fstpl	20(%esp)	#
+ 676 049d DD5C240C 		fstpl	12(%esp)	#
+ 677 04a1 DD8520FE 		fldl	-480(%ebp)	# %sfp
+ 677      FFFF
+ 678 04a7 DD5C2404 		fstpl	4(%esp)	#
+ 679 04ab 8D830000 		leal	.LC18@GOTOFF(%ebx), %eax	#, tmp141
+ 679      0000
+ 680 04b1 890424   		movl	%eax, (%esp)	# tmp141,
+ 681 04b4 E8FCFFFF 		call	printf@PLT	#
+ 681      FF
+ 175:trigo_fast.c  ****       printf("kcm_h=%.20e kcm_l=%.20e kd=%.20e\n\n",kch_h,kch_l,kd);
+ 682              		.loc 1 175 0
+ 683 04b9 8DB30000 		leal	.LC19@GOTOFF(%ebx), %esi	#, D.2137
+ 683      0000
+ 684 04bf DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 684      FFFF
+ 685 04c5 DD5C2414 		fstpl	20(%esp)	#
+ 686 04c9 DD8528FE 		fldl	-472(%ebp)	# %sfp
+ 686      FFFF
+ 687 04cf DD5C240C 		fstpl	12(%esp)	#
+ 688 04d3 DD8520FE 		fldl	-480(%ebp)	# %sfp
+ 688      FFFF
+ 689 04d9 DD5C2404 		fstpl	4(%esp)	#
+ 690 04dd 893424   		movl	%esi, (%esp)	# D.2137,
+ 691 04e0 E8FCFFFF 		call	printf@PLT	#
+ 691      FF
+ 692              	.LVL86:
+ 693              	.LBB33:
+ 176:trigo_fast.c  ****       Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+ 694              		.loc 1 176 0
+ 695 04e5 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 695      FFFF
+ 696 04eb DC8B0000 		fmull	.LC20@GOTOFF(%ebx)	#
+ 696      0000
+ 697 04f1 DD9D10FE 		fstpl	-496(%ebp)	# %sfp
+ 697      FFFF
+ 698              	.LVL87:
+ 699              	.LBE33:
+ 177:trigo_fast.c  ****       printf("kcm_h=%.20e kcm_l=%.20e kd=%.20e\n\n",kch_h,kch_l,kd);
+ 700              		.loc 1 177 0
+ 701 04f7 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 701      FFFF
+ 702              	.LVL88:
+ 703 04fd DD5C2414 		fstpl	20(%esp)	#
+ 704 0501 DD8528FE 		fldl	-472(%ebp)	# %sfp
+ 704      FFFF
+ 705 0507 DD5C240C 		fstpl	12(%esp)	#
+ 706 050b DD8520FE 		fldl	-480(%ebp)	# %sfp
+ 706      FFFF
+ 707 0511 DD5C2404 		fstpl	4(%esp)	#
+ 708 0515 893424   		movl	%esi, (%esp)	# D.2137,
+ 709 0518 E8FCFFFF 		call	printf@PLT	#
+ 709      FF
+ 710              	.LVL89:
+ 711              	.LBB34:
+ 179:trigo_fast.c  ****       Add12 (th,tl,  kch_l, kcm_h) ;
+ 712              		.loc 1 179 0
+ 713 051d DD8528FE 		fldl	-472(%ebp)	# %sfp
+ 713      FFFF
+ 714 0523 DC8510FE 		faddl	-496(%ebp)	# %sfp
+ 714      FFFF
+ 715              	.LVL90:
+ 716              	.LBE34:
+ 717              	.LBB35:
+ 181:trigo_fast.c  ****       Add22 (pyh, pyl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+ 718              		.loc 1 181 0
+ 719 0529 DD8550FE 		fldl	-432(%ebp)	# %sfp
+ 719      FFFF
+ 720              	.LVL91:
+ 721 052f DC8520FE 		faddl	-480(%ebp)	# %sfp
+ 721      FFFF
+ 722 0535 D9C0     		fld	%st(0)	#
+ 723 0537 D8C2     		fadd	%st(2), %st	#,
+ 724              	.LVL92:
+ 725 0539 DCE9     		fsubr	%st, %st(1)	#,
+ 726 053b D9C9     		fxch	%st(1)	#
+ 727              	.LVL93:
+ 728 053d D8C2     		fadd	%st(2), %st	#,
+ 729              	.LBE35:
+ 730              	.LBB36:
+ 731 053f DD8528FE 		fldl	-472(%ebp)	# %sfp
+ 731      FFFF
+ 732 0545 DEEB     		fsubrp	%st, %st(3)	#,
+ 733 0547 D9CA     		fxch	%st(2)	#
+ 734 0549 DCAD10FE 		fsubrl	-496(%ebp)	# %sfp
+ 734      FFFF
+ 735              	.LBE36:
+ 736              	.LBB37:
+ 737 054f DEC2     		faddp	%st, %st(2)	#,
+ 738              	.LBE37:
+ 739              	.LBB38:
+ 740 0551 DD830000 		fldl	.LC21@GOTOFF(%ebx)	#
+ 740      0000
+ 741 0557 DD8530FE 		fldl	-464(%ebp)	# %sfp
+ 741      FFFF
+ 742 055d D8C9     		fmul	%st(1), %st	#,
+ 743 055f DCA510FE 		fsubl	-496(%ebp)	# %sfp
+ 743      FFFF
+ 744 0565 DD830000 		fldl	.LC22@GOTOFF(%ebx)	#
+ 744      0000
+ 745 056b DD8530FE 		fldl	-464(%ebp)	# %sfp
+ 745      FFFF
+ 746 0571 D8C9     		fmul	%st(1), %st	#,
+ 747 0573 DEC2     		faddp	%st, %st(2)	#,
+ 748 0575 D9CA     		fxch	%st(2)	#
+ 749 0577 DC8D18FE 		fmull	-488(%ebp)	# %sfp
+ 749      FFFF
+ 750 057d DEC1     		faddp	%st, %st(1)	#,
+ 751 057f D9C9     		fxch	%st(1)	#
+ 752 0581 DC8D18FE 		fmull	-488(%ebp)	# %sfp
+ 752      FFFF
+ 753 0587 DEC1     		faddp	%st, %st(1)	#,
+ 754              	.LBE38:
+ 755              	.LBB39:
+ 756 0589 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 756      FFFF
+ 757 058f DC8B0000 		fmull	.LC23@GOTOFF(%ebx)	#
+ 757      0000
+ 758 0595 DEC1     		faddp	%st, %st(1)	#,
+ 759 0597 DEC2     		faddp	%st, %st(2)	#,
+ 760              	.LVL94:
+ 761 0599 D9C0     		fld	%st(0)	#
+ 762 059b D8C2     		fadd	%st(2), %st	#,
+ 763 059d DD17     		fstl	(%edi)	#* pyh
+ 764 059f DEE9     		fsubrp	%st, %st(1)	#,
+ 765              	.LVL95:
+ 766 05a1 DEC1     		faddp	%st, %st(1)	#,
+ 767 05a3 8B8544FE 		movl	-444(%ebp), %eax	# %sfp,
+ 767      FFFF
+ 768 05a9 DD18     		fstpl	(%eax)	#
+ 769 05ab E9680300 		jmp	.L24	#
+ 769      00
+ 770              	.LVL96:
+ 771              	.L23:
+ 772              	.LBE39:
+ 773              	.LBE31:
+ 186:trigo_fast.c  ****       if (absxhi < XMAX_CODY_WAITE_2) { 
+ 774              		.loc 1 186 0
+ 775 05b0 81FEFA21 		cmpl	$1089020410, %esi	#, absxhi
+ 775      E940
+ 776 05b6 7F35     		jg	.L25	#,
+ 777              	.LBB40:
+ 188:trigo_fast.c  **** 	Add12 (*pyh,*pyl,  (x - kd*RR_CW2_CH),  (kd*RR_CW2_MCL) ) ;
+ 778              		.loc 1 188 0
+ 779 05b8 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 779      FFFF
+ 780 05be DC8B0000 		fmull	.LC24@GOTOFF(%ebx)	#
+ 780      0000
+ 781 05c4 DC8550FE 		faddl	-432(%ebp)	# %sfp
+ 781      FFFF
+ 782              	.LVL97:
+ 783 05ca DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 783      FFFF
+ 784              	.LVL98:
+ 785 05d0 DC8B0000 		fmull	.LC25@GOTOFF(%ebx)	#
+ 785      0000
+ 786              	.LVL99:
+ 787 05d6 D9C1     		fld	%st(1)	#
+ 788              	.LVL100:
+ 789 05d8 D8C1     		fadd	%st(1), %st	#,
+ 790 05da DD17     		fstl	(%edi)	#* pyh
+ 791              	.LVL101:
+ 792 05dc DEE2     		fsubp	%st, %st(2)	#,
+ 793              	.LVL102:
+ 794 05de DEE1     		fsubp	%st, %st(1)	#,
+ 795 05e0 8B8544FE 		movl	-444(%ebp), %eax	# %sfp,
+ 795      FFFF
+ 796 05e6 DD18     		fstpl	(%eax)	#
+ 797 05e8 E92B0300 		jmp	.L24	#
+ 797      00
+ 798              	.LVL103:
+ 799              	.L25:
+ 800              	.LBE40:
+ 801              	.LBB41:
+ 192:trigo_fast.c  ****        Add12Cond(*pyh,*pyl,  (x - kd*RR_CW3_CH) -  kd*RR_CW3_CM,   kd*RR_CW3_MCL);
+ 802              		.loc 1 192 0
+ 803 05ed DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 803      FFFF
+ 804 05f3 D88B0000 		fmuls	.LC26@GOTOFF(%ebx)	#
+ 804      0000
+ 805 05f9 DC8550FE 		faddl	-432(%ebp)	# %sfp
+ 805      FFFF
+ 806 05ff DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 806      FFFF
+ 807 0605 D88B0000 		fmuls	.LC27@GOTOFF(%ebx)	#
+ 807      0000
+ 808 060b DEC1     		faddp	%st, %st(1)	#,
+ 809              	.LVL104:
+ 810 060d DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 810      FFFF
+ 811              	.LVL105:
+ 812 0613 DC8B0000 		fmull	.LC28@GOTOFF(%ebx)	#
+ 812      0000
+ 813              	.LVL106:
+ 814 0619 D9C1     		fld	%st(1)	#
+ 815              	.LVL107:
+ 816 061b D8C1     		fadd	%st(1), %st	#,
+ 817 061d DD17     		fstl	(%edi)	#* pyh
+ 818 061f D9C2     		fld	%st(2)	#
+ 819 0621 D9EE     		fldz
+ 820 0623 D9CC     		fxch	%st(4)	#
+ 821 0625 DBEC     		fucomi	%st(4), %st	#,
+ 822 0627 DDDC     		fstp	%st(4)	#
+ 823 0629 7702     		ja	.L28	#,
+ 824 062b D9E0     		fchs
+ 825              	.L28:
+ 826 062d D9C2     		fld	%st(2)	#
+ 827 062f D9EE     		fldz
+ 828 0631 D9CC     		fxch	%st(4)	#
+ 829 0633 DBEC     		fucomi	%st(4), %st	#,
+ 830 0635 DDDC     		fstp	%st(4)	#
+ 831 0637 7712     		ja	.L48	#,
+ 832 0639 DDD8     		fstp	%st(0)	#
+ 833 063b DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 833      FFFF
+ 834 0641 DC8B0000 		fmull	.LC29@GOTOFF(%ebx)	#
+ 834      0000
+ 835 0647 D9C9     		fxch	%st(1)	#
+ 836 0649 EB02     		jmp	.L31	#
+ 837              	.L48:
+ 838 064b D9C9     		fxch	%st(1)	#
+ 839              	.L31:
+ 840 064d DFE9     		fucomip	%st(1), %st	#,
+ 841 064f DDD8     		fstp	%st(0)	#
+ 842 0651 7611     		jbe	.L46	#,
+ 843              	.LVL108:
+ 844 0653 DEE2     		fsubp	%st, %st(2)	#,
+ 845              	.LVL109:
+ 846 0655 DEE1     		fsubp	%st, %st(1)	#,
+ 847 0657 8B8544FE 		movl	-444(%ebp), %eax	# %sfp,
+ 847      FFFF
+ 848 065d DD18     		fstpl	(%eax)	#
+ 849 065f E9B40200 		jmp	.L24	#
+ 849      00
+ 850              	.LVL110:
+ 851              	.L46:
+ 852 0664 DEE1     		fsubp	%st, %st(1)	#,
+ 853              	.LVL111:
+ 854 0666 DEE9     		fsubrp	%st, %st(1)	#,
+ 855              	.LVL112:
+ 856 0668 8B8544FE 		movl	-444(%ebp), %eax	# %sfp,
+ 856      FFFF
+ 857 066e DD18     		fstpl	(%eax)	#
+ 858 0670 E9A30200 		jmp	.L24	#
+ 858      00
+ 859              	.LVL113:
+ 860              	.L22:
+ 861              	.LBE41:
+ 195:trigo_fast.c  ****   else  if ( absxhi < XMAX_DDRR ) {
+ 862              		.loc 1 195 0
+ 863 0675 81FEFA21 		cmpl	$1119429114, %esi	#, absxhi
+ 863      B942
+ 864 067b 0F8FB601 		jg	.L34	#,
+ 864      0000
+ 865              	.LBB42:
+ 866              	.LBB43:
+ 198:trigo_fast.c  ****     DOUBLE2LONGINT(kl, x*INV_PIO256);
+ 867              		.loc 1 198 0
+ 868 0681 DD8550FE 		fldl	-432(%ebp)	# %sfp
+ 868      FFFF
+ 869 0687 DC8B0000 		fmull	.LC7@GOTOFF(%ebx)	#
+ 869      0000
+ 870 068d D9C0     		fld	%st(0)	#
+ 871 068f D8830000 		fadds	.LC11@GOTOFF(%ebx)	#
+ 871      0000
+ 872 0695 DD9D48FE 		fstpl	-440(%ebp)	# %sfp
+ 872      FFFF
+ 873 069b D9EE     		fldz
+ 874 069d D9C9     		fxch	%st(1)	#
+ 875 069f DFE9     		fucomip	%st(1), %st	#,
+ 876 06a1 DDD8     		fstp	%st(0)	#
+ 877 06a3 7214     		jb	.L47	#,
+ 878 06a5 8B8548FE 		movl	-440(%ebp), %eax	# %sfp, kl
+ 878      FFFF
+ 879 06ab 8B954CFE 		movl	-436(%ebp), %edx	# %sfp,
+ 879      FFFF
+ 880 06b1 81E2FFFF 		andl	$524287, %edx	#,
+ 880      0700
+ 881              	.LVL114:
+ 882 06b7 EB12     		jmp	.L37	#
+ 883              	.LVL115:
+ 884              	.L47:
+ 885 06b9 8B8548FE 		movl	-440(%ebp), %eax	# %sfp, kl
+ 885      FFFF
+ 886 06bf 8B954CFE 		movl	-436(%ebp), %edx	# %sfp,
+ 886      FFFF
+ 887 06c5 81CA0000 		orl	$-524288, %edx	#,
+ 887      F8FF
+ 888              	.LVL116:
+ 889              	.L37:
+ 890              	.LBE43:
+ 200:trigo_fast.c  ****     k = (int) kl;
+ 891              		.loc 1 200 0
+ 892 06cb 898548FE 		movl	%eax, -440(%ebp)	# kl, %sfp
+ 892      FFFF
+ 893              	.LVL117:
+ 204:trigo_fast.c  ****     if((k&127) == 0) { 
+ 894              		.loc 1 204 0
+ 895 06d1 A87F     		testb	$127, %al	#,
+ 896 06d3 0F859F00 		jne	.L38	#,
+ 896      0000
+ 897              	.LBB44:
+ 206:trigo_fast.c  ****       scs_set_d(X, x*128.0); 
+ 898              		.loc 1 206 0
+ 899 06d9 DD8550FE 		fldl	-432(%ebp)	# %sfp
+ 899      FFFF
+ 900 06df D88B0000 		fmuls	.LC30@GOTOFF(%ebx)	#
+ 900      0000
+ 901 06e5 DD5C2404 		fstpl	4(%esp)	#
+ 902 06e9 8D75B8   		leal	-72(%ebp), %esi	#, tmp196
+ 903 06ec 893424   		movl	%esi, (%esp)	# tmp196,
+ 904 06ef E8FCFFFF 		call	scs_set_d@PLT	#
+ 904      FF
+ 905              	.LVL118:
+ 207:trigo_fast.c  ****       k= rem_pio2_scs(Y, X);
+ 906              		.loc 1 207 0
+ 907 06f4 89742404 		movl	%esi, 4(%esp)	# tmp196,
+ 908 06f8 8D7588   		leal	-120(%ebp), %esi	#, tmp198
+ 909 06fb 893424   		movl	%esi, (%esp)	# tmp198,
+ 910 06fe E8FCFFFF 		call	rem_pio2_scs@PLT	#
+ 910      FF
+ 911 0703 898548FE 		movl	%eax, -440(%ebp)	#, %sfp
+ 911      FFFF
+ 912              	.LVL119:
+ 209:trigo_fast.c  ****       scs_get_d(pyh, Y);
+ 913              		.loc 1 209 0
+ 914 0709 89742404 		movl	%esi, 4(%esp)	# tmp198,
+ 915 070d 893C24   		movl	%edi, (%esp)	# pyh,
+ 916 0710 E8FCFFFF 		call	scs_get_d@PLT	#
+ 916      FF
+ 917              	.LVL120:
+ 210:trigo_fast.c  ****       scs_set_d(Yh, *pyh);
+ 918              		.loc 1 210 0
+ 919 0715 DD07     		fldl	(%edi)	#* pyh
+ 920 0717 DD5C2404 		fstpl	4(%esp)	#
+ 921 071b 8D8558FF 		leal	-168(%ebp), %eax	#,
+ 921      FFFF
+ 922 0721 898550FE 		movl	%eax, -432(%ebp)	#, %sfp
+ 922      FFFF
+ 923 0727 890424   		movl	%eax, (%esp)	#,
+ 924 072a E8FCFFFF 		call	scs_set_d@PLT	#
+ 924      FF
+ 211:trigo_fast.c  ****       scs_sub(Yl, Y,Yh);
+ 925              		.loc 1 211 0
+ 926 072f 8B8550FE 		movl	-432(%ebp), %eax	# %sfp,
+ 926      FFFF
+ 927 0735 89442408 		movl	%eax, 8(%esp)	#,
+ 928 0739 89742404 		movl	%esi, 4(%esp)	# tmp198,
+ 929 073d 8DB528FF 		leal	-216(%ebp), %esi	#, tmp204
+ 929      FFFF
+ 930 0743 893424   		movl	%esi, (%esp)	# tmp204,
+ 931 0746 E8FCFFFF 		call	scs_sub@PLT	#
+ 931      FF
+ 212:trigo_fast.c  ****       scs_get_d(pyl, Yl);
+ 932              		.loc 1 212 0
+ 933 074b 89742404 		movl	%esi, 4(%esp)	# tmp204,
+ 934 074f 8B8544FE 		movl	-444(%ebp), %eax	# %sfp,
+ 934      FFFF
+ 935 0755 890424   		movl	%eax, (%esp)	#,
+ 936 0758 E8FCFFFF 		call	scs_get_d@PLT	#
+ 936      FF
+ 213:trigo_fast.c  ****       *pyh = *pyh * (1./128.) ;
+ 937              		.loc 1 213 0
+ 938 075d D9830000 		flds	.LC31@GOTOFF(%ebx)	#
+ 938      0000
+ 939 0763 DD07     		fldl	(%edi)	#* pyh
+ 940 0765 D8C9     		fmul	%st(1), %st	#,
+ 941 0767 DD1F     		fstpl	(%edi)	#* pyh
+ 214:trigo_fast.c  ****       *pyl = *pyl * (1./128.) ;
+ 942              		.loc 1 214 0
+ 943 0769 8B8544FE 		movl	-444(%ebp), %eax	# %sfp,
+ 943      FFFF
+ 944 076f DC08     		fmull	(%eax)	#
+ 945 0771 DD18     		fstpl	(%eax)	#
+ 946 0773 E9A00100 		jmp	.L24	#
+ 946      00
+ 947              	.LVL121:
+ 948              	.L38:
+ 949              	.LBE44:
+ 199:trigo_fast.c  ****     kd=(double)kl;
+ 950              		.loc 1 199 0
+ 951 0778 898558FE 		movl	%eax, -424(%ebp)	# kl,
+ 951      FFFF
+ 952 077e 89955CFE 		movl	%edx, -420(%ebp)	# kl,
+ 952      FFFF
+ 953 0784 DFAD58FE 		fildll	-424(%ebp)	#
+ 953      FFFF
+ 954              	.LVL122:
+ 955              	.LBB45:
+ 218:trigo_fast.c  ****       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+ 956              		.loc 1 218 0
+ 957 078a D9C0     		fld	%st(0)	#
+ 958 078c DC8B0000 		fmull	.LC1@GOTOFF(%ebx)	#
+ 958      0000
+ 959              	.LVL123:
+ 960 0792 D9C1     		fld	%st(1)	#
+ 961              	.LVL124:
+ 962 0794 D8E1     		fsub	%st(1), %st	#,
+ 963 0796 DEC1     		faddp	%st, %st(1)	#,
+ 964              	.LVL125:
+ 965 0798 D9C1     		fld	%st(1)	#
+ 966              	.LVL126:
+ 967 079a D8E1     		fsub	%st(1), %st	#,
+ 968              	.LVL127:
+ 969 079c D9C2     		fld	%st(2)	#
+ 970              	.LVL128:
+ 971 079e DC8B0000 		fmull	.LC9@GOTOFF(%ebx)	#
+ 971      0000
+ 972              	.LVL129:
+ 973 07a4 DD830000 		fldl	.LC16@GOTOFF(%ebx)	#
+ 973      0000
+ 974              	.LVL130:
+ 975 07aa D9C3     		fld	%st(3)	#
+ 976 07ac D8C9     		fmul	%st(1), %st	#,
+ 977 07ae D8E2     		fsub	%st(2), %st	#,
+ 978 07b0 D9830000 		flds	.LC17@GOTOFF(%ebx)	#
+ 978      0000
+ 979 07b6 D9C5     		fld	%st(5)	#
+ 980 07b8 D8C9     		fmul	%st(1), %st	#,
+ 981 07ba DEC2     		faddp	%st, %st(2)	#,
+ 982 07bc D9CA     		fxch	%st(2)	#
+ 983 07be D8CC     		fmul	%st(4), %st	#,
+ 984 07c0 DEC1     		faddp	%st, %st(1)	#,
+ 985              	.LVL131:
+ 986 07c2 D9C9     		fxch	%st(1)	#
+ 987 07c4 D8CB     		fmul	%st(3), %st	#,
+ 988 07c6 DEC1     		faddp	%st, %st(1)	#,
+ 989              	.LVL132:
+ 990              	.LBE45:
+ 991              	.LBB46:
+ 219:trigo_fast.c  ****       Mul12(&kcm_h, &kcm_l,   kd, RR_DD_MCM);
+ 992              		.loc 1 219 0
+ 993 07c8 D9C4     		fld	%st(4)	#
+ 994              	.LVL133:
+ 995 07ca DC8B0000 		fmull	.LC20@GOTOFF(%ebx)	#
+ 995      0000
+ 996              	.LVL134:
+ 997              	.LBE46:
+ 998              	.LBB47:
+ 220:trigo_fast.c  ****       Add12 (th,tl,  kch_l, kcm_h) ;
+ 999              		.loc 1 220 0
+ 1000 07d0 D9C1     		fld	%st(1)	#
+ 1001              	.LVL135:
+ 1002 07d2 D8C1     		fadd	%st(1), %st	#,
+ 1003 07d4 D9CB     		fxch	%st(3)	#
+ 1004              	.LVL136:
+ 1005              	.LBE47:
+ 1006              	.LBB48:
+ 222:trigo_fast.c  ****       Add22 (pyh, pyl,    (x + kch_h) , (kcm_l - kd*RR_DD_CL),   th, tl) ;
+ 1007              		.loc 1 222 0
+ 1008 07d6 DC8550FE 		faddl	-432(%ebp)	# %sfp
+ 1008      FFFF
+ 1009              	.LVL137:
+ 1010 07dc D9C0     		fld	%st(0)	#
+ 1011 07de D8C4     		fadd	%st(4), %st	#,
+ 1012              	.LVL138:
+ 1013 07e0 DCE9     		fsubr	%st, %st(1)	#,
+ 1014              	.LVL139:
+ 1015 07e2 D9C9     		fxch	%st(1)	#
+ 1016              	.LVL140:
+ 1017 07e4 D8C4     		fadd	%st(4), %st	#,
+ 1018 07e6 D9CB     		fxch	%st(3)	#
+ 1019              	.LBE48:
+ 1020              	.LBB49:
+ 1021 07e8 DEEC     		fsubrp	%st, %st(4)	#,
+ 1022 07ea D9CB     		fxch	%st(3)	#
+ 1023 07ec D8E9     		fsubr	%st(1), %st	#,
+ 1024              	.LBE49:
+ 1025              	.LBB50:
+ 1026 07ee DEC2     		faddp	%st, %st(2)	#,
+ 1027              	.LVL141:
+ 1028              	.LBE50:
+ 1029              	.LBB51:
+ 1030 07f0 DD830000 		fldl	.LC21@GOTOFF(%ebx)	#
+ 1030      0000
+ 1031 07f6 D9C5     		fld	%st(5)	#
+ 1032 07f8 D8C9     		fmul	%st(1), %st	#,
+ 1033 07fa DEE2     		fsubp	%st, %st(2)	#,
+ 1034 07fc DD830000 		fldl	.LC22@GOTOFF(%ebx)	#
+ 1034      0000
+ 1035 0802 DCCE     		fmul	%st, %st(6)	#,
+ 1036 0804 D9CE     		fxch	%st(6)	#
+ 1037 0806 DEC2     		faddp	%st, %st(2)	#,
+ 1038 0808 D8CC     		fmul	%st(4), %st	#,
+ 1039 080a DEC1     		faddp	%st, %st(1)	#,
+ 1040 080c D9CC     		fxch	%st(4)	#
+ 1041 080e DECB     		fmulp	%st, %st(3)	#,
+ 1042 0810 D9CB     		fxch	%st(3)	#
+ 1043 0812 DEC2     		faddp	%st, %st(2)	#,
+ 1044 0814 D9CB     		fxch	%st(3)	#
+ 1045              	.LBE51:
+ 1046              	.LBB52:
+ 1047 0816 DC8B0000 		fmull	.LC23@GOTOFF(%ebx)	#
+ 1047      0000
+ 1048 081c DEC1     		faddp	%st, %st(1)	#,
+ 1049 081e DEC1     		faddp	%st, %st(1)	#,
+ 1050              	.LVL142:
+ 1051 0820 D9C1     		fld	%st(1)	#
+ 1052              	.LVL143:
+ 1053 0822 D8C1     		fadd	%st(1), %st	#,
+ 1054 0824 DD17     		fstl	(%edi)	#* pyh
+ 1055 0826 DEEA     		fsubrp	%st, %st(2)	#,
+ 1056 0828 DEC1     		faddp	%st, %st(1)	#,
+ 1057 082a 8B8544FE 		movl	-444(%ebp), %eax	# %sfp,
+ 1057      FFFF
+ 1058              	.LVL144:
+ 1059 0830 DD18     		fstpl	(%eax)	#
+ 1060 0832 E9E10000 		jmp	.L24	#
+ 1060      00
+ 1061              	.LVL145:
+ 1062              	.L34:
+ 1063              	.LBE52:
+ 1064              	.LBE42:
+ 1065              	.LBB53:
+ 227:trigo_fast.c  ****     if (absxhi > 0x7F700000) /*2^(1023-7)*/
+ 1066              		.loc 1 227 0
+ 1067 0837 81FE0000 		cmpl	$2138046464, %esi	#, absxhi
+ 1067      707F
+ 1068 083d 7E39     		jle	.L39	#,
+ 228:trigo_fast.c  ****       return (*scs_fun)(x);
+ 1069              		.loc 1 228 0
+ 1070 083f DD8550FE 		fldl	-432(%ebp)	# %sfp
+ 1070      FFFF
+ 1071 0845 DD1C24   		fstpl	(%esp)	#
+ 1072 0848 FF5514   		call	*20(%ebp)	# scs_fun
+ 1073 084b D9BD66FE 		fnstcw	-410(%ebp)	#
+ 1073      FFFF
+ 1074 0851 0FB78566 		movzwl	-410(%ebp), %eax	#, tmp275
+ 1074      FEFFFF
+ 1075 0858 B40C     		movb	$12, %ah	#, tmp275
+ 1076 085a 66898564 		movw	%ax, -412(%ebp)	# tmp275,
+ 1076      FEFFFF
+ 1077 0861 D9AD64FE 		fldcw	-412(%ebp)	#
+ 1077      FFFF
+ 1078 0867 DB9D48FE 		fistpl	-440(%ebp)	# %sfp
+ 1078      FFFF
+ 1079 086d D9AD66FE 		fldcw	-410(%ebp)	#
+ 1079      FFFF
+ 1080 0873 E9AC0000 		jmp	.L40	#
+ 1080      00
+ 1081              	.L39:
+ 230:trigo_fast.c  ****       scs_set_d(X, x*128.0); 
+ 1082              		.loc 1 230 0
+ 1083 0878 DD8550FE 		fldl	-432(%ebp)	# %sfp
+ 1083      FFFF
+ 1084 087e D88B0000 		fmuls	.LC30@GOTOFF(%ebx)	#
+ 1084      0000
+ 1085 0884 DD5C2404 		fstpl	4(%esp)	#
+ 1086 0888 8DB5F8FE 		leal	-264(%ebp), %esi	#, tmp256
+ 1086      FFFF
+ 1087 088e 893424   		movl	%esi, (%esp)	# tmp256,
+ 1088 0891 E8FCFFFF 		call	scs_set_d@PLT	#
+ 1088      FF
+ 231:trigo_fast.c  ****       k= rem_pio2_scs(Y, X);
+ 1089              		.loc 1 231 0
+ 1090 0896 89742404 		movl	%esi, 4(%esp)	# tmp256,
+ 1091 089a 8DB5C8FE 		leal	-312(%ebp), %esi	#, tmp258
+ 1091      FFFF
+ 1092 08a0 893424   		movl	%esi, (%esp)	# tmp258,
+ 1093 08a3 E8FCFFFF 		call	rem_pio2_scs@PLT	#
+ 1093      FF
+ 1094 08a8 898548FE 		movl	%eax, -440(%ebp)	#, %sfp
+ 1094      FFFF
+ 1095              	.LVL146:
+ 233:trigo_fast.c  ****       scs_get_d(pyh, Y);
+ 1096              		.loc 1 233 0
+ 1097 08ae 89742404 		movl	%esi, 4(%esp)	# tmp258,
+ 1098 08b2 893C24   		movl	%edi, (%esp)	# pyh,
+ 1099 08b5 E8FCFFFF 		call	scs_get_d@PLT	#
+ 1099      FF
+ 1100              	.LVL147:
+ 234:trigo_fast.c  ****       scs_set_d(Yh, *pyh);
+ 1101              		.loc 1 234 0
+ 1102 08ba DD07     		fldl	(%edi)	#* pyh
+ 1103 08bc DD5C2404 		fstpl	4(%esp)	#
+ 1104 08c0 8D8598FE 		leal	-360(%ebp), %eax	#,
+ 1104      FFFF
+ 1105 08c6 898550FE 		movl	%eax, -432(%ebp)	#, %sfp
+ 1105      FFFF
+ 1106 08cc 890424   		movl	%eax, (%esp)	#,
+ 1107 08cf E8FCFFFF 		call	scs_set_d@PLT	#
+ 1107      FF
+ 235:trigo_fast.c  ****       scs_sub(Yl, Y,Yh);
+ 1108              		.loc 1 235 0
+ 1109 08d4 8B8550FE 		movl	-432(%ebp), %eax	# %sfp,
+ 1109      FFFF
+ 1110 08da 89442408 		movl	%eax, 8(%esp)	#,
+ 1111 08de 89742404 		movl	%esi, 4(%esp)	# tmp258,
+ 1112 08e2 8DB568FE 		leal	-408(%ebp), %esi	#, tmp264
+ 1112      FFFF
+ 1113 08e8 893424   		movl	%esi, (%esp)	# tmp264,
+ 1114 08eb E8FCFFFF 		call	scs_sub@PLT	#
+ 1114      FF
+ 236:trigo_fast.c  ****       scs_get_d(pyl, Yl);
+ 1115              		.loc 1 236 0
+ 1116 08f0 89742404 		movl	%esi, 4(%esp)	# tmp264,
+ 1117 08f4 8B8544FE 		movl	-444(%ebp), %eax	# %sfp,
+ 1117      FFFF
+ 1118 08fa 890424   		movl	%eax, (%esp)	#,
+ 1119 08fd E8FCFFFF 		call	scs_get_d@PLT	#
+ 1119      FF
+ 237:trigo_fast.c  ****       *pyh = *pyh * (1./128.) ;
+ 1120              		.loc 1 237 0
+ 1121 0902 D9830000 		flds	.LC31@GOTOFF(%ebx)	#
+ 1121      0000
+ 1122 0908 DD07     		fldl	(%edi)	#* pyh
+ 1123 090a D8C9     		fmul	%st(1), %st	#,
+ 1124 090c DD1F     		fstpl	(%edi)	#* pyh
+ 238:trigo_fast.c  ****       *pyl = *pyl * (1./128.) ;
+ 1125              		.loc 1 238 0
+ 1126 090e 8B8544FE 		movl	-444(%ebp), %eax	# %sfp,
+ 1126      FFFF
+ 1127 0914 DC08     		fmull	(%eax)	#
+ 1128 0916 DD18     		fstpl	(%eax)	#
+ 1129              	.L24:
+ 1130              	.LBE53:
+ 241:trigo_fast.c  ****   printf("\n");
+ 1131              		.loc 1 241 0
+ 1132 0918 C704240A 		movl	$10, (%esp)	#,
+ 1132      000000
+ 1133 091f E8FCFFFF 		call	putchar@PLT	#
+ 1133      FF
+ 1134              	.LVL148:
+ 1135              	.L40:
+ 243:trigo_fast.c  **** }
+ 1136              		.loc 1 243 0
+ 1137 0924 8B8548FE 		movl	-440(%ebp), %eax	# %sfp,
+ 1137      FFFF
+ 1138 092a 81C40C02 		addl	$524, %esp	#,
+ 1138      0000
+ 1139 0930 5B       		popl	%ebx	#
+ 1140              		.cfi_restore 3
+ 1141 0931 5E       		popl	%esi	#
+ 1142              		.cfi_restore 6
+ 1143 0932 5F       		popl	%edi	#
+ 1144              		.cfi_restore 7
+ 1145              	.LVL149:
+ 1146 0933 5D       		popl	%ebp	#
+ 1147              		.cfi_restore 5
+ 1148              		.cfi_def_cfa 4, 4
+ 1149 0934 C3       		ret
+ 1150              		.cfi_endproc
+ 1151              	.LFE9:
+ 1153              		.section	.rodata.str1.4
+ 1154 006b 00       		.align 4
+ 1155              	.LC32:
+ 1156 006c 45525245 		.string	"ERREUR: %d is not a valid value in sn_tan \n"
+ 1156      55523A20 
+ 1156      25642069 
+ 1156      73206E6F 
+ 1156      74206120 
+ 1157              		.text
+ 1158              	.globl tan_rn
+ 1160              	tan_rn:
+ 1161              	.LFB18:
+ 470:trigo_fast.c  **** double tan_rn(double x){  
+ 1162              		.loc 1 470 0
+ 1163              		.cfi_startproc
+ 1164              	.LVL150:
+ 1165 0935 55       		pushl	%ebp	#
+ 1166              		.cfi_def_cfa_offset 8
+ 1167              		.cfi_offset 5, -8
+ 1168 0936 89E5     		movl	%esp, %ebp	#,
+ 1169              		.cfi_def_cfa_register 5
+ 1170 0938 56       		pushl	%esi	#
+ 1171 0939 53       		pushl	%ebx	#
+ 1172 093a 83EC50   		subl	$80, %esp	#,
+ 1173              		.cfi_offset 3, -16
+ 1174              		.cfi_offset 6, -12
+ 1175 093d E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 1175      FF
+ 1176 0942 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 1176      0000
+ 1177 0948 DD4508   		fldl	8(%ebp)	# x
+ 1178 094b DD55B8   		fstl	-72(%ebp)	# %sfp
+ 483:trigo_fast.c  ****   xx.d=x;
+ 1179              		.loc 1 483 0
+ 1180 094e DD55C0   		fstl	-64(%ebp)	# %sfp
+ 484:trigo_fast.c  ****   absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
+ 1181              		.loc 1 484 0
+ 1182 0951 8B4DC4   		movl	-60(%ebp), %ecx	# %sfp, D.2479
+ 1183              	.LVL151:
+ 488:trigo_fast.c  ****     if((y.i[HI_ENDIAN]&0x7FFFFFFF) < 0x3E4BEAD3){	/* Test if |x| < (1+e)2^(-26) */
+ 1184              		.loc 1 488 0
+ 1185 0954 8B45C4   		movl	-60(%ebp), %eax	# %sfp, tmp83
+ 1186 0957 25FFFFFF 		andl	$2147483647, %eax	#, tmp83
+ 1186      7F
+ 1187 095c 3DD2EA4B 		cmpl	$1045162706, %eax	#, tmp83
+ 1187      3E
+ 1188 0961 0F8E5A03 		jle	.L51	#,
+ 1188      0000
+ 498:trigo_fast.c  ****   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
+ 1189              		.loc 1 498 0
+ 1190 0967 8D55C8   		leal	-56(%ebp), %edx	#, tmp84
+ 1191 096a 8D45D0   		leal	-48(%ebp), %eax	#, tmp85
+ 1192 096d 8BB30000 		movl	scs_cos_rn@GOT(%ebx), %esi	#, tmp87
+ 1192      0000
+ 1193 0973 8974240C 		movl	%esi, 12(%esp)	# tmp87,
+ 1194 0977 81E1FFFF 		andl	$2147483647, %ecx	#, tmp88
+ 1194      FF7F
+ 1195 097d 894C2408 		movl	%ecx, 8(%esp)	# tmp88,
+ 1196 0981 DD1C24   		fstpl	(%esp)	#
+ 1197 0984 E838F9FF 		call	trig_range_reduction	#
+ 1197      FF
+ 1198              	.LVL152:
+ 500:trigo_fast.c  ****   quadrant = (k>>7)&3;	/* Pi is divided in 4 quarters */	
+ 1199              		.loc 1 500 0
+ 1200 0989 89C2     		movl	%eax, %edx	# k, tmp89
+ 1201 098b C1FA07   		sarl	$7, %edx	#, tmp89
+ 1202 098e 83E203   		andl	$3, %edx	#, quadrant
+ 1203              	.LVL153:
+ 502:trigo_fast.c  ****   k=(k&127)<<2;
+ 1204              		.loc 1 502 0
+ 1205 0991 83E07F   		andl	$127, %eax	#, D.2487
+ 1206              	.LVL154:
+ 1207 0994 C1E002   		sall	$2, %eax	#, k.247
+ 1208              	.LVL155:
+ 504:trigo_fast.c  ****   switch (quadrant){
+ 1209              		.loc 1 504 0
+ 1210 0997 83FA01   		cmpl	$1, %edx	#, quadrant
+ 1211 099a 0F84A500 		je	.L54	#,
+ 1211      0000
+ 1212 09a0 83FA01   		cmpl	$1, %edx	#, quadrant
+ 1213 09a3 7F09     		jg	.L57	#,
+ 1214 09a5 85D2     		testl	%edx, %edx	# quadrant
+ 1215 09a7 741C     		je	.L53	#,
+ 1216              		.p2align 4,,6
+ 1217 09a9 E9310200 		jmp	.L52	#
+ 1217      00
+ 1218              	.L57:
+ 1219 09ae 83FA02   		cmpl	$2, %edx	#, quadrant
+ 1220              		.p2align 4,,6
+ 1221 09b1 0F841601 		je	.L55	#,
+ 1221      0000
+ 1222 09b7 83FA03   		cmpl	$3, %edx	#, quadrant
+ 1223              		.p2align 4,,5
+ 1224 09ba 0F851F02 		jne	.L52	#,
+ 1224      0000
+ 1225              		.p2align 4,,5
+ 1226 09c0 E9980100 		jmp	.L66	#
+ 1226      00
+ 1227              	.L53:
+ 509:trigo_fast.c  ****    if(k<=(64<<2)) {  /* sah <= cah */
+ 1228              		.loc 1 509 0
+ 1229 09c5 3D000100 		cmpl	$256, %eax	#, k.247
+ 1229      00
+ 1230              		.p2align 4,,3
+ 1231 09ca 7F39     		jg	.L58	#,
+ 510:trigo_fast.c  ****     sah=sincosTable[k].d; /* sin(a), high part */
+ 1232              		.loc 1 510 0
+ 1233 09cc DD84C300 		fldl	sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1233      000000
+ 1234 09d3 DD9B0000 		fstpl	sah@GOTOFF(%ebx)	# sah
+ 1234      0000
+ 511:trigo_fast.c  ****     sal=sincosTable[k+1].d; /* sin(a), low part */
+ 1235              		.loc 1 511 0
+ 1236 09d9 DD84C308 		fldl	8+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1236      000000
+ 1237 09e0 DD9B0800 		fstpl	sal@GOTOFF(%ebx)	# sal
+ 1237      0000
+ 512:trigo_fast.c  ****     cah=sincosTable[k+2].d; /* cos(a), high part */
+ 1238              		.loc 1 512 0
+ 1239 09e6 DD84C310 		fldl	16+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1239      000000
+ 1240 09ed DD9B1000 		fstpl	cah@GOTOFF(%ebx)	# cah
+ 1240      0000
+ 513:trigo_fast.c  ****     cal=sincosTable[k+3].d; /* cos(a), low part */
+ 1241              		.loc 1 513 0
+ 1242 09f3 DD84C318 		fldl	24+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1242      000000
+ 1243 09fa DD9B1800 		fstpl	cal@GOTOFF(%ebx)	# cal
+ 1243      0000
+ 1244 0a00 E9FF0100 		jmp	.L59	#
+ 1244      00
+ 1245              	.L58:
+ 1246              	.LBB60:
+ 515:trigo_fast.c  ****     int k1=(128<<2) - k;
+ 1247              		.loc 1 515 0
+ 1248 0a05 BA000200 		movl	$512, %edx	#, tmp105
+ 1248      00
+ 1249              	.LVL156:
+ 1250 0a0a 29C2     		subl	%eax, %edx	# k.247, tmp105
+ 1251              	.LVL157:
+ 516:trigo_fast.c  ****     cah=sincosTable[k1].d; 
+ 1252              		.loc 1 516 0
+ 1253 0a0c DD84D300 		fldl	sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1253      000000
+ 1254 0a13 DD9B1000 		fstpl	cah@GOTOFF(%ebx)	# cah
+ 1254      0000
+ 517:trigo_fast.c  ****     cal=sincosTable[k1+1].d;
+ 1255              		.loc 1 517 0
+ 1256 0a19 DD84D308 		fldl	8+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1256      000000
+ 1257 0a20 DD9B1800 		fstpl	cal@GOTOFF(%ebx)	# cal
+ 1257      0000
+ 518:trigo_fast.c  ****     sah=sincosTable[k1+2].d;
+ 1258              		.loc 1 518 0
+ 1259 0a26 DD84D310 		fldl	16+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1259      000000
+ 1260 0a2d DD9B0000 		fstpl	sah@GOTOFF(%ebx)	# sah
+ 1260      0000
+ 519:trigo_fast.c  ****     sal=sincosTable[k1+3].d;
+ 1261              		.loc 1 519 0
+ 1262 0a33 DD84D318 		fldl	24+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1262      000000
+ 1263 0a3a DD9B0800 		fstpl	sal@GOTOFF(%ebx)	# sal
+ 1263      0000
+ 1264 0a40 E9BF0100 		jmp	.L59	#
+ 1264      00
+ 1265              	.LVL158:
+ 1266              	.L54:
+ 1267              	.LBE60:
+ 526:trigo_fast.c  ****      if(k<=(64<<2)) {  /* sah <= cah */
+ 1268              		.loc 1 526 0
+ 1269 0a45 3D000100 		cmpl	$256, %eax	#, k.247
+ 1269      00
+ 1270 0a4a 7F3D     		jg	.L60	#,
+ 527:trigo_fast.c  ****     cah=-sincosTable[k].d; /* sin(a), high part */
+ 1271              		.loc 1 527 0
+ 1272 0a4c DD84C300 		fldl	sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1272      000000
+ 1273 0a53 D9E0     		fchs
+ 1274 0a55 DD9B1000 		fstpl	cah@GOTOFF(%ebx)	# cah
+ 1274      0000
+ 528:trigo_fast.c  ****     cal=-sincosTable[k+1].d; /* sin(a), low part */
+ 1275              		.loc 1 528 0
+ 1276 0a5b DD84C308 		fldl	8+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1276      000000
+ 1277 0a62 D9E0     		fchs
+ 1278 0a64 DD9B1800 		fstpl	cal@GOTOFF(%ebx)	# cal
+ 1278      0000
+ 529:trigo_fast.c  ****     sah=sincosTable[k+2].d; /* cos(a), high part */
+ 1279              		.loc 1 529 0
+ 1280 0a6a DD84C310 		fldl	16+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1280      000000
+ 1281 0a71 DD9B0000 		fstpl	sah@GOTOFF(%ebx)	# sah
+ 1281      0000
+ 530:trigo_fast.c  ****     sal=sincosTable[k+3].d; /* cos(a), low part */
+ 1282              		.loc 1 530 0
+ 1283 0a77 DD84C318 		fldl	24+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1283      000000
+ 1284 0a7e DD9B0800 		fstpl	sal@GOTOFF(%ebx)	# sal
+ 1284      0000
+ 1285 0a84 E97B0100 		jmp	.L59	#
+ 1285      00
+ 1286              	.L60:
+ 1287              	.LBB61:
+ 532:trigo_fast.c  ****     int k1=(128<<2) - k;
+ 1288              		.loc 1 532 0
+ 1289 0a89 BA000200 		movl	$512, %edx	#, tmp138
+ 1289      00
+ 1290              	.LVL159:
+ 1291 0a8e 29C2     		subl	%eax, %edx	# k.247, tmp138
+ 1292              	.LVL160:
+ 533:trigo_fast.c  ****     sah=sincosTable[k1].d; 
+ 1293              		.loc 1 533 0
+ 1294 0a90 DD84D300 		fldl	sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1294      000000
+ 1295 0a97 DD9B0000 		fstpl	sah@GOTOFF(%ebx)	# sah
+ 1295      0000
+ 534:trigo_fast.c  ****     sal=sincosTable[k1+1].d;
+ 1296              		.loc 1 534 0
+ 1297 0a9d DD84D308 		fldl	8+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1297      000000
+ 1298 0aa4 DD9B0800 		fstpl	sal@GOTOFF(%ebx)	# sal
+ 1298      0000
+ 535:trigo_fast.c  ****     cah=-sincosTable[k1+2].d;
+ 1299              		.loc 1 535 0
+ 1300 0aaa DD84D310 		fldl	16+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1300      000000
+ 1301 0ab1 D9E0     		fchs
+ 1302 0ab3 DD9B1000 		fstpl	cah@GOTOFF(%ebx)	# cah
+ 1302      0000
+ 536:trigo_fast.c  ****     cal=-sincosTable[k1+3].d;
+ 1303              		.loc 1 536 0
+ 1304 0ab9 DD84D318 		fldl	24+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1304      000000
+ 1305 0ac0 D9E0     		fchs
+ 1306 0ac2 DD9B1800 		fstpl	cal@GOTOFF(%ebx)	# cal
+ 1306      0000
+ 1307 0ac8 E9370100 		jmp	.L59	#
+ 1307      00
+ 1308              	.LVL161:
+ 1309              	.L55:
+ 1310              	.LBE61:
+ 540:trigo_fast.c  ****       if(k<=(64<<2)) {  /* sah <= cah */
+ 1311              		.loc 1 540 0
+ 1312 0acd 3D000100 		cmpl	$256, %eax	#, k.247
+ 1312      00
+ 1313 0ad2 7F41     		jg	.L61	#,
+ 541:trigo_fast.c  ****     sah=-sincosTable[k].d; /* sin(a), high part */
+ 1314              		.loc 1 541 0
+ 1315 0ad4 DD84C300 		fldl	sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1315      000000
+ 1316 0adb D9E0     		fchs
+ 1317 0add DD9B0000 		fstpl	sah@GOTOFF(%ebx)	# sah
+ 1317      0000
+ 542:trigo_fast.c  ****     sal=-sincosTable[k+1].d; /* sin(a), low part */
+ 1318              		.loc 1 542 0
+ 1319 0ae3 DD84C308 		fldl	8+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1319      000000
+ 1320 0aea D9E0     		fchs
+ 1321 0aec DD9B0800 		fstpl	sal@GOTOFF(%ebx)	# sal
+ 1321      0000
+ 543:trigo_fast.c  ****     cah=-sincosTable[k+2].d; /* cos(a), high part */
+ 1322              		.loc 1 543 0
+ 1323 0af2 DD84C310 		fldl	16+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1323      000000
+ 1324 0af9 D9E0     		fchs
+ 1325 0afb DD9B1000 		fstpl	cah@GOTOFF(%ebx)	# cah
+ 1325      0000
+ 544:trigo_fast.c  ****     cal=-sincosTable[k+3].d; /* cos(a), low part */
+ 1326              		.loc 1 544 0
+ 1327 0b01 DD84C318 		fldl	24+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1327      000000
+ 1328 0b08 D9E0     		fchs
+ 1329 0b0a DD9B1800 		fstpl	cal@GOTOFF(%ebx)	# cal
+ 1329      0000
+ 1330 0b10 E9EF0000 		jmp	.L59	#
+ 1330      00
+ 1331              	.L61:
+ 1332              	.LBB62:
+ 546:trigo_fast.c  ****     int k1=(128<<2) - k;
+ 1333              		.loc 1 546 0
+ 1334 0b15 BA000200 		movl	$512, %edx	#, tmp175
+ 1334      00
+ 1335              	.LVL162:
+ 1336 0b1a 29C2     		subl	%eax, %edx	# k.247, tmp175
+ 1337              	.LVL163:
+ 547:trigo_fast.c  ****     cah=-sincosTable[k1].d; 
+ 1338              		.loc 1 547 0
+ 1339 0b1c DD84D300 		fldl	sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1339      000000
+ 1340 0b23 D9E0     		fchs
+ 1341 0b25 DD9B1000 		fstpl	cah@GOTOFF(%ebx)	# cah
+ 1341      0000
+ 548:trigo_fast.c  ****     cal=-sincosTable[k1+1].d;
+ 1342              		.loc 1 548 0
+ 1343 0b2b DD84D308 		fldl	8+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1343      000000
+ 1344 0b32 D9E0     		fchs
+ 1345 0b34 DD9B1800 		fstpl	cal@GOTOFF(%ebx)	# cal
+ 1345      0000
+ 549:trigo_fast.c  ****     sah=-sincosTable[k1+2].d;
+ 1346              		.loc 1 549 0
+ 1347 0b3a DD84D310 		fldl	16+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1347      000000
+ 1348 0b41 D9E0     		fchs
+ 1349 0b43 DD9B0000 		fstpl	sah@GOTOFF(%ebx)	# sah
+ 1349      0000
+ 550:trigo_fast.c  ****     sal=-sincosTable[k1+3].d;
+ 1350              		.loc 1 550 0
+ 1351 0b49 DD84D318 		fldl	24+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1351      000000
+ 1352 0b50 D9E0     		fchs
+ 1353 0b52 DD9B0800 		fstpl	sal@GOTOFF(%ebx)	# sal
+ 1353      0000
+ 1354 0b58 E9A70000 		jmp	.L59	#
+ 1354      00
+ 1355              	.LVL164:
+ 1356              	.L66:
+ 1357              	.LBE62:
+ 554:trigo_fast.c  ****      if(k<=(64<<2)) {  /* sah <= cah */
+ 1358              		.loc 1 554 0
+ 1359 0b5d 3D000100 		cmpl	$256, %eax	#, k.247
+ 1359      00
+ 1360 0b62 7F3A     		jg	.L62	#,
+ 555:trigo_fast.c  ****     cah=sincosTable[k].d ; /* sin(a), high part */
+ 1361              		.loc 1 555 0
+ 1362 0b64 DD84C300 		fldl	sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1362      000000
+ 1363 0b6b DD9B1000 		fstpl	cah@GOTOFF(%ebx)	# cah
+ 1363      0000
+ 556:trigo_fast.c  ****     cal=sincosTable[k+1].d; /* sin(a), low part */
+ 1364              		.loc 1 556 0
+ 1365 0b71 DD84C308 		fldl	8+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1365      000000
+ 1366 0b78 DD9B1800 		fstpl	cal@GOTOFF(%ebx)	# cal
+ 1366      0000
+ 557:trigo_fast.c  ****     sah=-sincosTable[k+2].d; /* cos(a), high part */
+ 1367              		.loc 1 557 0
+ 1368 0b7e DD84C310 		fldl	16+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1368      000000
+ 1369 0b85 D9E0     		fchs
+ 1370 0b87 DD9B0000 		fstpl	sah@GOTOFF(%ebx)	# sah
+ 1370      0000
+ 558:trigo_fast.c  ****     sal=-sincosTable[k+3].d; /* cos(a), low part */
+ 1371              		.loc 1 558 0
+ 1372 0b8d DD84C318 		fldl	24+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1372      000000
+ 1373 0b94 D9E0     		fchs
+ 1374 0b96 DD9B0800 		fstpl	sal@GOTOFF(%ebx)	# sal
+ 1374      0000
+ 1375 0b9c EB66     		jmp	.L59	#
+ 1376              	.L62:
+ 1377              	.LBB63:
+ 560:trigo_fast.c  ****     int k1=(128<<2) - k;
+ 1378              		.loc 1 560 0
+ 1379 0b9e BA000200 		movl	$512, %edx	#, tmp212
+ 1379      00
+ 1380              	.LVL165:
+ 1381 0ba3 29C2     		subl	%eax, %edx	# k.247, tmp212
+ 1382              	.LVL166:
+ 561:trigo_fast.c  ****     sah=-sincosTable[k1].d ; 
+ 1383              		.loc 1 561 0
+ 1384 0ba5 DD84D300 		fldl	sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1384      000000
+ 1385 0bac D9E0     		fchs
+ 1386 0bae DD9B0000 		fstpl	sah@GOTOFF(%ebx)	# sah
+ 1386      0000
+ 562:trigo_fast.c  ****     sal=-sincosTable[k1+1].d;
+ 1387              		.loc 1 562 0
+ 1388 0bb4 DD84D308 		fldl	8+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1388      000000
+ 1389 0bbb D9E0     		fchs
+ 1390 0bbd DD9B0800 		fstpl	sal@GOTOFF(%ebx)	# sal
+ 1390      0000
+ 563:trigo_fast.c  ****     cah=sincosTable[k1+2].d;
+ 1391              		.loc 1 563 0
+ 1392 0bc3 DD84D310 		fldl	16+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1392      000000
+ 1393 0bca DD9B1000 		fstpl	cah@GOTOFF(%ebx)	# cah
+ 1393      0000
+ 564:trigo_fast.c  ****     cal=sincosTable[k1+3].d;
+ 1394              		.loc 1 564 0
+ 1395 0bd0 DD84D318 		fldl	24+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1395      000000
+ 1396 0bd7 DD9B1800 		fstpl	cal@GOTOFF(%ebx)	# cal
+ 1396      0000
+ 1397 0bdd EB25     		jmp	.L59	#
+ 1398              	.LVL167:
+ 1399              	.L52:
+ 1400              	.LBE63:
+ 568:trigo_fast.c  ****      fprintf(stderr,"ERREUR: %d is not a valid value in sn_tan \n", quadrant);
+ 1401              		.loc 1 568 0
+ 1402 0bdf 89542408 		movl	%edx, 8(%esp)	# quadrant,
+ 1403 0be3 8D830000 		leal	.LC32@GOTOFF(%ebx), %eax	#, tmp230
+ 1403      0000
+ 1404              	.LVL168:
+ 1405 0be9 89442404 		movl	%eax, 4(%esp)	# tmp230,
+ 1406 0bed 8B830000 		movl	stderr@GOT(%ebx), %eax	#, tmp231
+ 1406      0000
+ 1407 0bf3 8B00     		movl	(%eax), %eax	# stderr, stderr
+ 1408 0bf5 890424   		movl	%eax, (%esp)	# stderr,
+ 1409 0bf8 E8FCFFFF 		call	fprintf@PLT	#
+ 1409      FF
+ 1410              	.LVL169:
+ 1411 0bfd D9EE     		fldz
+ 569:trigo_fast.c  ****      return 0.0;
+ 1412              		.loc 1 569 0
+ 1413 0bff E9BD0000 		jmp	.L51	#
+ 1413      00
+ 1414              	.LVL170:
+ 1415              	.L59:
+ 576:trigo_fast.c  ****   do_sin(&sh, &sl, yh, yl);
+ 1416              		.loc 1 576 0
+ 1417 0c04 8D55E8   		leal	-24(%ebp), %edx	#, tmp234
+ 1418 0c07 8D45F0   		leal	-16(%ebp), %eax	#, tmp235
+ 1419              	.LVL171:
+ 1420 0c0a DD45C8   		fldl	-56(%ebp)	# yl
+ 1421 0c0d DD5C2408 		fstpl	8(%esp)	#
+ 1422              	.LVL172:
+ 1423 0c11 DD45D0   		fldl	-48(%ebp)	# yh
+ 1424 0c14 DD1C24   		fstpl	(%esp)	#
+ 1425 0c17 E8E4F3FF 		call	do_sin	#
+ 1425      FF
+ 577:trigo_fast.c  ****   do_cos(&ch, &cl, yh, yl);
+ 1426              		.loc 1 577 0
+ 1427 0c1c 8D55D8   		leal	-40(%ebp), %edx	#, tmp238
+ 1428 0c1f 8D45E0   		leal	-32(%ebp), %eax	#, tmp239
+ 1429 0c22 DD45C8   		fldl	-56(%ebp)	# yl
+ 1430 0c25 DD5C2408 		fstpl	8(%esp)	#
+ 1431 0c29 DD45D0   		fldl	-48(%ebp)	# yh
+ 1432 0c2c DD1C24   		fstpl	(%esp)	#
+ 1433 0c2f E8F1F4FF 		call	do_cos	#
+ 1433      FF
+ 1434              	.LVL173:
+ 1435              	.LBB64:
+ 580:trigo_fast.c  ****    Div22(&reshi, &reslo, sh, sl, ch, cl);
+ 1436              		.loc 1 580 0
+ 1437 0c34 DD45F0   		fldl	-16(%ebp)	# sh
+ 1438              	.LVL174:
+ 1439 0c37 DD45E0   		fldl	-32(%ebp)	# ch
+ 1440 0c3a D9C1     		fld	%st(1)	#
+ 1441 0c3c D8F1     		fdiv	%st(1), %st	#,
+ 1442              	.LVL175:
+ 1443              	.LBB65:
+ 1444 0c3e DD830000 		fldl	.LC1@GOTOFF(%ebx)	#
+ 1444      0000
+ 1445              	.LVL176:
+ 1446 0c44 D9C1     		fld	%st(1)	#
+ 1447 0c46 D8C9     		fmul	%st(1), %st	#,
+ 1448 0c48 D9C9     		fxch	%st(1)	#
+ 1449              	.LVL177:
+ 1450 0c4a D8CB     		fmul	%st(3), %st	#,
+ 1451              	.LVL178:
+ 1452 0c4c D9C2     		fld	%st(2)	#
+ 1453              	.LVL179:
+ 1454 0c4e D8E2     		fsub	%st(2), %st	#,
+ 1455 0c50 DEC2     		faddp	%st, %st(2)	#,
+ 1456              	.LVL180:
+ 1457 0c52 D9C3     		fld	%st(3)	#
+ 1458 0c54 D8E1     		fsub	%st(1), %st	#,
+ 1459 0c56 DEC1     		faddp	%st, %st(1)	#,
+ 1460              	.LVL181:
+ 1461 0c58 D9C2     		fld	%st(2)	#
+ 1462              	.LVL182:
+ 1463 0c5a D8E2     		fsub	%st(2), %st	#,
+ 1464              	.LVL183:
+ 1465 0c5c D9C4     		fld	%st(4)	#
+ 1466              	.LVL184:
+ 1467 0c5e D8E2     		fsub	%st(2), %st	#,
+ 1468              	.LVL185:
+ 1469 0c60 D9C5     		fld	%st(5)	#
+ 1470              	.LVL186:
+ 1471 0c62 D8CD     		fmul	%st(5), %st	#,
+ 1472              	.LVL187:
+ 1473              	.LBE65:
+ 1474 0c64 DCEF     		fsubr	%st, %st(7)	#,
+ 1475 0c66 D9CF     		fxch	%st(7)	#
+ 1476              	.LVL188:
+ 1477 0c68 DD5DC0   		fstpl	-64(%ebp)	# %sfp
+ 1478              	.LBB66:
+ 1479 0c6b D9C3     		fld	%st(3)	#
+ 1480 0c6d D8CB     		fmul	%st(3), %st	#,
+ 1481 0c6f DEE7     		fsubp	%st, %st(7)	#,
+ 1482 0c71 DCCB     		fmul	%st, %st(3)	#,
+ 1483 0c73 D9CE     		fxch	%st(6)	#
+ 1484 0c75 DEC3     		faddp	%st, %st(3)	#,
+ 1485 0c77 DCC9     		fmul	%st, %st(1)	#,
+ 1486 0c79 D9C9     		fxch	%st(1)	#
+ 1487 0c7b DEC2     		faddp	%st, %st(2)	#,
+ 1488 0c7d DECC     		fmulp	%st, %st(4)	#,
+ 1489 0c7f DEC3     		faddp	%st, %st(3)	#,
+ 1490 0c81 D9CA     		fxch	%st(2)	#
+ 1491              	.LBE66:
+ 1492 0c83 DC6DC0   		fsubrl	-64(%ebp)	# %sfp
+ 1493              	.LVL189:
+ 1494 0c86 DC45E8   		faddl	-24(%ebp)	# sl
+ 1495 0c89 D9C2     		fld	%st(2)	#
+ 1496              	.LVL190:
+ 1497 0c8b DC4DD8   		fmull	-40(%ebp)	# cl
+ 1498 0c8e DEE9     		fsubrp	%st, %st(1)	#,
+ 1499 0c90 DEF1     		fdivp	%st, %st(1)	#,
+ 1500              	.LVL191:
+ 1501 0c92 D9C1     		fld	%st(1)	#
+ 1502              	.LVL192:
+ 1503 0c94 D8C1     		fadd	%st(1), %st	#,
+ 1504              	.LVL193:
+ 1505 0c96 DCEA     		fsubr	%st, %st(2)	#,
+ 1506              	.LVL194:
+ 1507 0c98 D9C9     		fxch	%st(1)	#
+ 1508              	.LVL195:
+ 1509 0c9a DEC2     		faddp	%st, %st(2)	#,
+ 1510 0c9c D9C9     		fxch	%st(1)	#
+ 1511              	.LBE64:
+ 584:trigo_fast.c  ****   if(reshi == (reshi + (reslo * 1.0004))){
+ 1512              		.loc 1 584 0
+ 1513 0c9e DC8B0000 		fmull	.LC33@GOTOFF(%ebx)	#
+ 1513      0000
+ 1514 0ca4 D8C1     		fadd	%st(1), %st	#,
+ 1515 0ca6 D9C9     		fxch	%st(1)	#
+ 1516 0ca8 DBE9     		fucomi	%st(1), %st	#,
+ 1517 0caa DDD9     		fstp	%st(1)	#
+ 1518 0cac 7A06     		jp	.L67	#,
+ 1519 0cae 7411     		je	.L51	#,
+ 1520 0cb0 DDD8     		fstp	%st(0)	#
+ 1521 0cb2 EB02     		jmp	.L65	#
+ 1522              	.L67:
+ 1523 0cb4 DDD8     		fstp	%st(0)	#
+ 1524              	.L65:
+ 587:trigo_fast.c  ****     return scs_tan_rn(x); 
+ 1525              		.loc 1 587 0
+ 1526 0cb6 DD45B8   		fldl	-72(%ebp)	# %sfp
+ 1527 0cb9 DD1C24   		fstpl	(%esp)	#
+ 1528 0cbc E8FCFFFF 		call	scs_tan_rn@PLT	#
+ 1528      FF
+ 1529              	.LVL196:
+ 1530              	.L51:
+ 590:trigo_fast.c  **** }
+ 1531              		.loc 1 590 0
+ 1532 0cc1 83C450   		addl	$80, %esp	#,
+ 1533 0cc4 5B       		popl	%ebx	#
+ 1534              		.cfi_restore 3
+ 1535 0cc5 5E       		popl	%esi	#
+ 1536              		.cfi_restore 6
+ 1537 0cc6 5D       		popl	%ebp	#
+ 1538              		.cfi_restore 5
+ 1539              		.cfi_def_cfa 4, 4
+ 1540 0cc7 C3       		ret
+ 1541              		.cfi_endproc
+ 1542              	.LFE18:
+ 1544              		.section	.rodata.str1.1
+ 1545              	.LC35:
+ 1546 00aa 4A555354 		.string	"JUST BEFORE RANGEREDUCE!"
+ 1546      20424546 
+ 1546      4F524520 
+ 1546      52414E47 
+ 1546      45524544 
+ 1547              	.LC36:
+ 1548 00c3 79683D25 		.string	"yh=%.20e, yl=%.20e\n"
+ 1548      2E323065 
+ 1548      2C20796C 
+ 1548      3D252E32 
+ 1548      30650A00 
+ 1549              	.LC37:
+ 1550 00d7 4A555354 		.string	"JUST AFTER RANGEREDUCE!"
+ 1550      20414654 
+ 1550      45522052 
+ 1550      414E4745 
+ 1550      52454455 
+ 1551              		.text
+ 1552              	.globl cos_rn
+ 1554              	cos_rn:
+ 1555              	.LFB14:
+ 360:trigo_fast.c  **** double cos_rn(double x){ 
+ 1556              		.loc 1 360 0
+ 1557              		.cfi_startproc
+ 1558              	.LVL197:
+ 1559 0cc8 55       		pushl	%ebp	#
+ 1560              		.cfi_def_cfa_offset 8
+ 1561              		.cfi_offset 5, -8
+ 1562 0cc9 89E5     		movl	%esp, %ebp	#,
+ 1563              		.cfi_def_cfa_register 5
+ 1564 0ccb 83EC78   		subl	$120, %esp	#,
+ 1565 0cce 895DF4   		movl	%ebx, -12(%ebp)	#,
+ 1566 0cd1 8975F8   		movl	%esi, -8(%ebp)	#,
+ 1567 0cd4 897DFC   		movl	%edi, -4(%ebp)	#,
+ 1568              		.cfi_offset 7, -12
+ 1569              		.cfi_offset 6, -16
+ 1570              		.cfi_offset 3, -20
+ 1571 0cd7 E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 1571      FF
+ 1572 0cdc 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 1572      0000
+ 1573 0ce2 DD4508   		fldl	8(%ebp)	# x
+ 1574 0ce5 DD55C0   		fstl	-64(%ebp)	# %sfp
+ 371:trigo_fast.c  ****   xx.d=x;
+ 1575              		.loc 1 371 0
+ 1576 0ce8 DD5DB8   		fstpl	-72(%ebp)	# %sfp
+ 372:trigo_fast.c  ****   absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
+ 1577              		.loc 1 372 0
+ 1578 0ceb 8B75BC   		movl	-68(%ebp), %esi	# %sfp, absxhi
+ 1579 0cee 81E6FFFF 		andl	$2147483647, %esi	#, absxhi
+ 1579      FF7F
+ 1580              	.LVL198:
+ 374:trigo_fast.c  ****   if (absxhi < XMAX_COS_FAST){
+ 1581              		.loc 1 374 0
+ 1582 0cf4 81FEFFFF 		cmpl	$1067450367, %esi	#, absxhi
+ 1582      9F3F
+ 1583 0cfa 7F6F     		jg	.L69	#,
+ 375:trigo_fast.c  ****     if (absxhi <XMAX_RETURN_1_FOR_COS)
+ 1584              		.loc 1 375 0
+ 1585 0cfc 81FEFFFF 		cmpl	$1044381695, %esi	#, absxhi
+ 1585      3F3E
+ 1586 0d02 7F07     		jg	.L70	#,
+ 1587 0d04 D9E8     		fld1
+ 1588 0d06 E9230200 		jmp	.L71	#
+ 1588      00
+ 1589              	.L70:
+ 378:trigo_fast.c  ****     yh=x*x;
+ 1590              		.loc 1 378 0
+ 1591 0d0b DD45C0   		fldl	-64(%ebp)	# %sfp
+ 1592 0d0e D8C8     		fmul	%st(0), %st	#,
+ 379:trigo_fast.c  ****     tc = yh * (c2.d + yh*(c4.d + yh*(c6.d + yh*(c8.d))));
+ 1593              		.loc 1 379 0
+ 1594 0d10 D9C0     		fld	%st(0)	#
+ 1595 0d12 DC8B5008 		fmull	c8@GOTOFF(%ebx)	# c8.d
+ 1595      0000
+ 1596 0d18 DC834808 		faddl	c6@GOTOFF(%ebx)	# c6.d
+ 1596      0000
+ 1597 0d1e D8C9     		fmul	%st(1), %st	#,
+ 1598 0d20 DC834008 		faddl	c4@GOTOFF(%ebx)	# c4.d
+ 1598      0000
+ 1599 0d26 D8C9     		fmul	%st(1), %st	#,
+ 1600 0d28 DC833808 		faddl	c2@GOTOFF(%ebx)	# c2.d
+ 1600      0000
+ 1601 0d2e D8C9     		fmul	%st(1), %st	#,
+ 1602              	.LVL199:
+ 1603              	.LBB69:
+ 380:trigo_fast.c  ****     Add12(ch,cl, 1, tc);
+ 1604              		.loc 1 380 0
+ 1605 0d30 D9E8     		fld1
+ 1606              	.LVL200:
+ 1607 0d32 D9C1     		fld	%st(1)	#
+ 1608 0d34 D8C1     		fadd	%st(1), %st	#,
+ 1609              	.LVL201:
+ 1610 0d36 DCE1     		fsub	%st, %st(1)	#,
+ 1611 0d38 D9CA     		fxch	%st(2)	#
+ 1612              	.LVL202:
+ 1613 0d3a DEE1     		fsubp	%st, %st(1)	#,
+ 1614 0d3c DD55D8   		fstl	-40(%ebp)	# cl
+ 1615              	.LVL203:
+ 1616              	.LBE69:
+ 381:trigo_fast.c  ****     if(ch == (ch + (cl * RN_CST_COSFAST))){	
+ 1617              		.loc 1 381 0
+ 1618 0d3f DC8B0000 		fmull	.LC34@GOTOFF(%ebx)	#
+ 1618      0000
+ 1619 0d45 D8C1     		fadd	%st(1), %st	#,
+ 1620 0d47 D9C9     		fxch	%st(1)	#
+ 1621 0d49 DBE9     		fucomi	%st(1), %st	#,
+ 1622 0d4b DDD9     		fstp	%st(1)	#
+ 1623 0d4d 7A06     		jp	.L80	#,
+ 1624 0d4f 0F84D701 		je	.L82	#,
+ 1624      0000
+ 1625              	.L80:
+ 1626              	.LBB70:
+ 380:trigo_fast.c  ****     Add12(ch,cl, 1, tc);
+ 1627              		.loc 1 380 0
+ 1628 0d55 DD5DE0   		fstpl	-32(%ebp)	# ch
+ 1629              	.LVL204:
+ 1630              	.LBE70:
+ 378:trigo_fast.c  ****     yh=x*x;
+ 1631              		.loc 1 378 0
+ 1632 0d58 DD5DD0   		fstpl	-48(%ebp)	# yh
+ 1633              	.LVL205:
+ 384:trigo_fast.c  ****       return scs_cos_rn(x); 
+ 1634              		.loc 1 384 0
+ 1635 0d5b DD45C0   		fldl	-64(%ebp)	# %sfp
+ 1636 0d5e DD1C24   		fstpl	(%esp)	#
+ 1637 0d61 E8FCFFFF 		call	scs_cos_rn@PLT	#
+ 1637      FF
+ 1638 0d66 E9C30100 		jmp	.L71	#
+ 1638      00
+ 1639              	.LVL206:
+ 1640              	.L69:
+ 389:trigo_fast.c  ****   printf ("JUST BEFORE RANGEREDUCE!\n");
+ 1641              		.loc 1 389 0
+ 1642 0d6b 8D830000 		leal	.LC35@GOTOFF(%ebx), %eax	#, tmp92
+ 1642      0000
+ 1643 0d71 890424   		movl	%eax, (%esp)	# tmp92,
+ 1644 0d74 E8FCFFFF 		call	puts@PLT	#
+ 1644      FF
+ 390:trigo_fast.c  ****   printf ("x=%.20e absxhi=%i\n", x,absxhi);
+ 1645              		.loc 1 390 0
+ 1646 0d79 8DBB0000 		leal	.LC4@GOTOFF(%ebx), %edi	#, D.2383
+ 1646      0000
+ 1647 0d7f 8974240C 		movl	%esi, 12(%esp)	# absxhi,
+ 1648 0d83 DD45C0   		fldl	-64(%ebp)	# %sfp
+ 1649 0d86 DD5C2404 		fstpl	4(%esp)	#
+ 1650 0d8a 893C24   		movl	%edi, (%esp)	# D.2383,
+ 1651 0d8d E8FCFFFF 		call	printf@PLT	#
+ 1651      FF
+ 392:trigo_fast.c  ****   printf ("yh=%.20e, yl=%.20e\n", yh,yl);
+ 1652              		.loc 1 392 0
+ 1653 0d92 8D830000 		leal	.LC36@GOTOFF(%ebx), %eax	#,
+ 1653      0000
+ 1654 0d98 8945B4   		movl	%eax, -76(%ebp)	#, %sfp
+ 1655              	.LVL207:
+ 1656 0d9b DD45C8   		fldl	-56(%ebp)	# yl
+ 1657 0d9e DD5C240C 		fstpl	12(%esp)	#
+ 1658              	.LVL208:
+ 1659 0da2 DD45D0   		fldl	-48(%ebp)	# yh
+ 1660 0da5 DD5C2404 		fstpl	4(%esp)	#
+ 1661 0da9 890424   		movl	%eax, (%esp)	#,
+ 1662 0dac E8FCFFFF 		call	printf@PLT	#
+ 1662      FF
+ 393:trigo_fast.c  ****   printf ("\n");
+ 1663              		.loc 1 393 0
+ 1664 0db1 C704240A 		movl	$10, (%esp)	#,
+ 1664      000000
+ 1665 0db8 E8FCFFFF 		call	putchar@PLT	#
+ 1665      FF
+ 395:trigo_fast.c  ****   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_cos_rn);
+ 1666              		.loc 1 395 0
+ 1667 0dbd 8D55C8   		leal	-56(%ebp), %edx	#, tmp95
+ 1668 0dc0 8D45D0   		leal	-48(%ebp), %eax	#, tmp96
+ 1669 0dc3 8B8B0000 		movl	scs_cos_rn@GOT(%ebx), %ecx	#, tmp98
+ 1669      0000
+ 1670 0dc9 894C240C 		movl	%ecx, 12(%esp)	# tmp98,
+ 1671 0dcd 89742408 		movl	%esi, 8(%esp)	# absxhi,
+ 1672 0dd1 DD45C0   		fldl	-64(%ebp)	# %sfp
+ 1673 0dd4 DD1C24   		fstpl	(%esp)	#
+ 1674 0dd7 E8E5F4FF 		call	trig_range_reduction	#
+ 1674      FF
+ 1675 0ddc 8945B8   		movl	%eax, -72(%ebp)	#, %sfp
+ 1676              	.LVL209:
+ 397:trigo_fast.c  ****   printf ("JUST AFTER RANGEREDUCE!\n");  
+ 1677              		.loc 1 397 0
+ 1678 0ddf 8D830000 		leal	.LC37@GOTOFF(%ebx), %eax	#, tmp99
+ 1678      0000
+ 1679              	.LVL210:
+ 1680 0de5 890424   		movl	%eax, (%esp)	# tmp99,
+ 1681 0de8 E8FCFFFF 		call	puts@PLT	#
+ 1681      FF
+ 398:trigo_fast.c  ****   printf ("x=%.20e absxhi=%i\n", x,absxhi);
+ 1682              		.loc 1 398 0
+ 1683 0ded 8974240C 		movl	%esi, 12(%esp)	# absxhi,
+ 1684 0df1 DD45C0   		fldl	-64(%ebp)	# %sfp
+ 1685 0df4 DD5C2404 		fstpl	4(%esp)	#
+ 1686 0df8 893C24   		movl	%edi, (%esp)	# D.2383,
+ 1687 0dfb E8FCFFFF 		call	printf@PLT	#
+ 1687      FF
+ 399:trigo_fast.c  ****   printf ("yh=%.20e, yl=%.20e\n", yh,yl);
+ 1688              		.loc 1 399 0
+ 1689 0e00 DD45C8   		fldl	-56(%ebp)	# yl
+ 1690 0e03 DD5C240C 		fstpl	12(%esp)	#
+ 1691 0e07 DD45D0   		fldl	-48(%ebp)	# yh
+ 1692 0e0a DD5C2404 		fstpl	4(%esp)	#
+ 1693 0e0e 8B45B4   		movl	-76(%ebp), %eax	# %sfp,
+ 1694 0e11 890424   		movl	%eax, (%esp)	#,
+ 1695 0e14 E8FCFFFF 		call	printf@PLT	#
+ 1695      FF
+ 400:trigo_fast.c  ****   printf ("\n");
+ 1696              		.loc 1 400 0
+ 1697 0e19 C704240A 		movl	$10, (%esp)	#,
+ 1697      000000
+ 1698 0e20 E8FCFFFF 		call	putchar@PLT	#
+ 1698      FF
+ 405:trigo_fast.c  ****   quadrant = (k>>7)&3;
+ 1699              		.loc 1 405 0
+ 1700 0e25 8B75B8   		movl	-72(%ebp), %esi	# %sfp, tmp102
+ 1701              	.LVL211:
+ 1702 0e28 C1FE07   		sarl	$7, %esi	#, tmp102
+ 1703 0e2b 83E603   		andl	$3, %esi	#, quadrant
+ 1704              	.LVL212:
+ 406:trigo_fast.c  ****   k=(k&127)<<2;
+ 1705              		.loc 1 406 0
+ 1706 0e2e 8B45B8   		movl	-72(%ebp), %eax	# %sfp, D.2388
+ 1707 0e31 83E07F   		andl	$127, %eax	#, D.2388
+ 1708 0e34 C1E002   		sall	$2, %eax	#, k.290
+ 1709              	.LVL213:
+ 408:trigo_fast.c  ****   if(k<=(64<<2)) {
+ 1710              		.loc 1 408 0
+ 1711 0e37 3D000100 		cmpl	$256, %eax	#, k.290
+ 1711      00
+ 1712 0e3c 7F36     		jg	.L72	#,
+ 409:trigo_fast.c  ****     sah=sincosTable[k+0].d; /* sin(a), high part */
+ 1713              		.loc 1 409 0
+ 1714 0e3e DD84C300 		fldl	sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1714      000000
+ 1715 0e45 DD9B0000 		fstpl	sah@GOTOFF(%ebx)	# sah
+ 1715      0000
+ 410:trigo_fast.c  ****     sal=sincosTable[k+1].d; /* sin(a), low part */
+ 1716              		.loc 1 410 0
+ 1717 0e4b DD84C308 		fldl	8+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1717      000000
+ 1718 0e52 DD9B0800 		fstpl	sal@GOTOFF(%ebx)	# sal
+ 1718      0000
+ 411:trigo_fast.c  ****     cah=sincosTable[k+2].d; /* cos(a), high part */
+ 1719              		.loc 1 411 0
+ 1720 0e58 DD84C310 		fldl	16+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1720      000000
+ 1721 0e5f DD9B1000 		fstpl	cah@GOTOFF(%ebx)	# cah
+ 1721      0000
+ 412:trigo_fast.c  ****     cal=sincosTable[k+3].d; /* cos(a), low part */
+ 1722              		.loc 1 412 0
+ 1723 0e65 DD84C318 		fldl	24+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 1723      000000
+ 1724 0e6c DD9B1800 		fstpl	cal@GOTOFF(%ebx)	# cal
+ 1724      0000
+ 1725 0e72 EB3B     		jmp	.L73	#
+ 1726              	.L72:
+ 1727              	.LBB71:
+ 414:trigo_fast.c  ****     int k1=(128<<2) - k;
+ 1728              		.loc 1 414 0
+ 1729 0e74 BA000200 		movl	$512, %edx	#, tmp118
+ 1729      00
+ 1730 0e79 29C2     		subl	%eax, %edx	# k.290, tmp118
+ 1731              	.LVL214:
+ 415:trigo_fast.c  ****     cah=sincosTable[k1+0].d; /* cos(a), high part */
+ 1732              		.loc 1 415 0
+ 1733 0e7b DD84D300 		fldl	sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1733      000000
+ 1734 0e82 DD9B1000 		fstpl	cah@GOTOFF(%ebx)	# cah
+ 1734      0000
+ 416:trigo_fast.c  ****     cal=sincosTable[k1+1].d; /* cos(a), low part  */ 
+ 1735              		.loc 1 416 0
+ 1736 0e88 DD84D308 		fldl	8+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1736      000000
+ 1737 0e8f DD9B1800 		fstpl	cal@GOTOFF(%ebx)	# cal
+ 1737      0000
+ 417:trigo_fast.c  ****     sah=sincosTable[k1+2].d; /* sin(a), high part */
+ 1738              		.loc 1 417 0
+ 1739 0e95 DD84D310 		fldl	16+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1739      000000
+ 1740 0e9c DD9B0000 		fstpl	sah@GOTOFF(%ebx)	# sah
+ 1740      0000
+ 418:trigo_fast.c  ****     sal=sincosTable[k1+3].d; /* sin(a), low part  */
+ 1741              		.loc 1 418 0
+ 1742 0ea2 DD84D318 		fldl	24+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 1742      000000
+ 1743 0ea9 DD9B0800 		fstpl	sal@GOTOFF(%ebx)	# sal
+ 1743      0000
+ 1744              	.LVL215:
+ 1745              	.L73:
+ 1746              	.LBE71:
+ 430:trigo_fast.c  ****   if (quadrant&1)   /*compute the cos  */
+ 1747              		.loc 1 430 0
+ 1748 0eaf F7C60100 		testl	$1, %esi	#, quadrant
+ 1748      0000
+ 1749 0eb5 741A     		je	.L74	#,
+ 431:trigo_fast.c  ****     do_sin(&ch, &cl,  yh,yl);
+ 1750              		.loc 1 431 0
+ 1751 0eb7 8D55D8   		leal	-40(%ebp), %edx	#, tmp135
+ 1752 0eba 8D45E0   		leal	-32(%ebp), %eax	#, tmp136
+ 1753              	.LVL216:
+ 1754 0ebd DD45C8   		fldl	-56(%ebp)	# yl
+ 1755 0ec0 DD5C2408 		fstpl	8(%esp)	#
+ 1756 0ec4 DD45D0   		fldl	-48(%ebp)	# yh
+ 1757 0ec7 DD1C24   		fstpl	(%esp)	#
+ 1758 0eca E831F1FF 		call	do_sin	#
+ 1758      FF
+ 1759 0ecf EB18     		jmp	.L75	#
+ 1760              	.LVL217:
+ 1761              	.L74:
+ 433:trigo_fast.c  ****     do_cos(&ch, &cl,  yh,yl);
+ 1762              		.loc 1 433 0
+ 1763 0ed1 8D55D8   		leal	-40(%ebp), %edx	#, tmp139
+ 1764 0ed4 8D45E0   		leal	-32(%ebp), %eax	#, tmp140
+ 1765              	.LVL218:
+ 1766 0ed7 DD45C8   		fldl	-56(%ebp)	# yl
+ 1767 0eda DD5C2408 		fstpl	8(%esp)	#
+ 1768 0ede DD45D0   		fldl	-48(%ebp)	# yh
+ 1769 0ee1 DD1C24   		fstpl	(%esp)	#
+ 1770 0ee4 E83CF2FF 		call	do_cos	#
+ 1770      FF
+ 1771              	.L75:
+ 436:trigo_fast.c  ****   if((quadrant == 1)||(quadrant == 2)) { 
+ 1772              		.loc 1 436 0
+ 1773 0ee9 83EE01   		subl	$1, %esi	#, tmp143
+ 1774              	.LVL219:
+ 1775 0eec 83FE01   		cmpl	$1, %esi	#, tmp143
+ 1776 0eef 7710     		ja	.L76	#,
+ 1777              	.LVL220:
+ 437:trigo_fast.c  ****     ch = -ch;
+ 1778              		.loc 1 437 0
+ 1779 0ef1 DD45E0   		fldl	-32(%ebp)	# ch
+ 1780 0ef4 D9E0     		fchs
+ 1781 0ef6 DD5DE0   		fstpl	-32(%ebp)	# ch
+ 1782              	.LVL221:
+ 438:trigo_fast.c  ****     cl = -cl;
+ 1783              		.loc 1 438 0
+ 1784 0ef9 DD45D8   		fldl	-40(%ebp)	# cl
+ 1785 0efc D9E0     		fchs
+ 1786 0efe DD5DD8   		fstpl	-40(%ebp)	# cl
+ 1787              	.L76:
+ 441:trigo_fast.c  ****   if(ch == (ch + (cl * 1.0004))){	
+ 1788              		.loc 1 441 0
+ 1789 0f01 DD45E0   		fldl	-32(%ebp)	# ch
+ 1790 0f04 DD830000 		fldl	.LC33@GOTOFF(%ebx)	#
+ 1790      0000
+ 1791 0f0a DC4DD8   		fmull	-40(%ebp)	# cl
+ 1792 0f0d D8C1     		fadd	%st(1), %st	#,
+ 1793 0f0f D9C9     		fxch	%st(1)	#
+ 1794 0f11 DBE9     		fucomi	%st(1), %st	#,
+ 1795 0f13 DDD9     		fstp	%st(1)	#
+ 1796 0f15 7A06     		jp	.L83	#,
+ 1797 0f17 7415     		je	.L71	#,
+ 1798 0f19 DDD8     		fstp	%st(0)	#
+ 1799 0f1b EB02     		jmp	.L81	#
+ 1800              	.L83:
+ 1801 0f1d DDD8     		fstp	%st(0)	#
+ 1802              	.L81:
+ 444:trigo_fast.c  ****     return scs_cos_rn(x); 
+ 1803              		.loc 1 444 0
+ 1804 0f1f DD45C0   		fldl	-64(%ebp)	# %sfp
+ 1805 0f22 DD1C24   		fstpl	(%esp)	#
+ 1806 0f25 E8FCFFFF 		call	scs_cos_rn@PLT	#
+ 1806      FF
+ 1807 0f2a EB02     		jmp	.L71	#
+ 1808              	.LVL222:
+ 1809              	.L82:
+ 1810 0f2c DDD9     		fstp	%st(1)	#
+ 1811              	.LVL223:
+ 1812              	.L71:
+ 447:trigo_fast.c  **** }
+ 1813              		.loc 1 447 0
+ 1814 0f2e 8B5DF4   		movl	-12(%ebp), %ebx	#,
+ 1815 0f31 8B75F8   		movl	-8(%ebp), %esi	#,
+ 1816 0f34 8B7DFC   		movl	-4(%ebp), %edi	#,
+ 1817 0f37 89EC     		movl	%ebp, %esp	#,
+ 1818              		.cfi_def_cfa_register 4
+ 1819              		.cfi_restore 7
+ 1820              		.cfi_restore 6
+ 1821              		.cfi_restore 3
+ 1822 0f39 5D       		popl	%ebp	#
+ 1823              		.cfi_restore 5
+ 1824              		.cfi_def_cfa_offset 4
+ 1825 0f3a C3       		ret
+ 1826              		.cfi_endproc
+ 1827              	.LFE14:
+ 1829              	.globl cos_rz
+ 1831              	cos_rz:
+ 1832              	.LFB17:
+ 461:trigo_fast.c  **** double cos_rz(double x){ 
+ 1833              		.loc 1 461 0
+ 1834              		.cfi_startproc
+ 1835              	.LVL224:
+ 1836 0f3b 55       		pushl	%ebp	#
+ 1837              		.cfi_def_cfa_offset 8
+ 1838              		.cfi_offset 5, -8
+ 1839 0f3c 89E5     		movl	%esp, %ebp	#,
+ 1840              		.cfi_def_cfa_register 5
+ 1841 0f3e 53       		pushl	%ebx	#
+ 1842 0f3f 83EC14   		subl	$20, %esp	#,
+ 1843              		.cfi_offset 3, -12
+ 1844 0f42 E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 1844      FF
+ 1845 0f47 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 1845      0000
+ 462:trigo_fast.c  **** return scs_cos_rz(x);
+ 1846              		.loc 1 462 0
+ 1847 0f4d DD4508   		fldl	8(%ebp)	# x
+ 1848 0f50 DD1C24   		fstpl	(%esp)	#
+ 1849 0f53 E8FCFFFF 		call	scs_cos_rz@PLT	#
+ 1849      FF
+ 463:trigo_fast.c  **** }
+ 1850              		.loc 1 463 0
+ 1851 0f58 83C414   		addl	$20, %esp	#,
+ 1852 0f5b 5B       		popl	%ebx	#
+ 1853              		.cfi_restore 3
+ 1854 0f5c 5D       		popl	%ebp	#
+ 1855              		.cfi_restore 5
+ 1856              		.cfi_def_cfa 4, 4
+ 1857 0f5d C3       		ret
+ 1858              		.cfi_endproc
+ 1859              	.LFE17:
+ 1861              	.globl cos_ru
+ 1863              	cos_ru:
+ 1864              	.LFB16:
+ 456:trigo_fast.c  **** double cos_ru(double x){ 
+ 1865              		.loc 1 456 0
+ 1866              		.cfi_startproc
+ 1867              	.LVL225:
+ 1868 0f5e 55       		pushl	%ebp	#
+ 1869              		.cfi_def_cfa_offset 8
+ 1870              		.cfi_offset 5, -8
+ 1871 0f5f 89E5     		movl	%esp, %ebp	#,
+ 1872              		.cfi_def_cfa_register 5
+ 1873 0f61 53       		pushl	%ebx	#
+ 1874 0f62 83EC14   		subl	$20, %esp	#,
+ 1875              		.cfi_offset 3, -12
+ 1876 0f65 E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 1876      FF
+ 1877 0f6a 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 1877      0000
+ 457:trigo_fast.c  **** return scs_cos_ru(x);
+ 1878              		.loc 1 457 0
+ 1879 0f70 DD4508   		fldl	8(%ebp)	# x
+ 1880 0f73 DD1C24   		fstpl	(%esp)	#
+ 1881 0f76 E8FCFFFF 		call	scs_cos_ru@PLT	#
+ 1881      FF
+ 458:trigo_fast.c  **** }
+ 1882              		.loc 1 458 0
+ 1883 0f7b 83C414   		addl	$20, %esp	#,
+ 1884 0f7e 5B       		popl	%ebx	#
+ 1885              		.cfi_restore 3
+ 1886 0f7f 5D       		popl	%ebp	#
+ 1887              		.cfi_restore 5
+ 1888              		.cfi_def_cfa 4, 4
+ 1889 0f80 C3       		ret
+ 1890              		.cfi_endproc
+ 1891              	.LFE16:
+ 1893              	.globl cos_rd
+ 1895              	cos_rd:
+ 1896              	.LFB15:
+ 451:trigo_fast.c  **** double cos_rd(double x){
+ 1897              		.loc 1 451 0
+ 1898              		.cfi_startproc
+ 1899              	.LVL226:
+ 1900 0f81 55       		pushl	%ebp	#
+ 1901              		.cfi_def_cfa_offset 8
+ 1902              		.cfi_offset 5, -8
+ 1903 0f82 89E5     		movl	%esp, %ebp	#,
+ 1904              		.cfi_def_cfa_register 5
+ 1905 0f84 53       		pushl	%ebx	#
+ 1906 0f85 83EC14   		subl	$20, %esp	#,
+ 1907              		.cfi_offset 3, -12
+ 1908 0f88 E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 1908      FF
+ 1909 0f8d 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 1909      0000
+ 452:trigo_fast.c  **** return scs_cos_rd(x);
+ 1910              		.loc 1 452 0
+ 1911 0f93 DD4508   		fldl	8(%ebp)	# x
+ 1912 0f96 DD1C24   		fstpl	(%esp)	#
+ 1913 0f99 E8FCFFFF 		call	scs_cos_rd@PLT	#
+ 1913      FF
+ 453:trigo_fast.c  **** }
+ 1914              		.loc 1 453 0
+ 1915 0f9e 83C414   		addl	$20, %esp	#,
+ 1916 0fa1 5B       		popl	%ebx	#
+ 1917              		.cfi_restore 3
+ 1918 0fa2 5D       		popl	%ebp	#
+ 1919              		.cfi_restore 5
+ 1920              		.cfi_def_cfa 4, 4
+ 1921 0fa3 C3       		ret
+ 1922              		.cfi_endproc
+ 1923              	.LFE15:
+ 1925              	.globl sin_rz
+ 1927              	sin_rz:
+ 1928              	.LFB13:
+ 351:trigo_fast.c  **** double sin_rz(double x){ 
+ 1929              		.loc 1 351 0
+ 1930              		.cfi_startproc
+ 1931              	.LVL227:
+ 1932 0fa4 55       		pushl	%ebp	#
+ 1933              		.cfi_def_cfa_offset 8
+ 1934              		.cfi_offset 5, -8
+ 1935 0fa5 89E5     		movl	%esp, %ebp	#,
+ 1936              		.cfi_def_cfa_register 5
+ 1937 0fa7 53       		pushl	%ebx	#
+ 1938 0fa8 83EC14   		subl	$20, %esp	#,
+ 1939              		.cfi_offset 3, -12
+ 1940 0fab E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 1940      FF
+ 1941 0fb0 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 1941      0000
+ 352:trigo_fast.c  **** return scs_sin_rz(x);
+ 1942              		.loc 1 352 0
+ 1943 0fb6 DD4508   		fldl	8(%ebp)	# x
+ 1944 0fb9 DD1C24   		fstpl	(%esp)	#
+ 1945 0fbc E8FCFFFF 		call	scs_sin_rz@PLT	#
+ 1945      FF
+ 353:trigo_fast.c  **** }
+ 1946              		.loc 1 353 0
+ 1947 0fc1 83C414   		addl	$20, %esp	#,
+ 1948 0fc4 5B       		popl	%ebx	#
+ 1949              		.cfi_restore 3
+ 1950 0fc5 5D       		popl	%ebp	#
+ 1951              		.cfi_restore 5
+ 1952              		.cfi_def_cfa 4, 4
+ 1953 0fc6 C3       		ret
+ 1954              		.cfi_endproc
+ 1955              	.LFE13:
+ 1957              	.globl sin_ru
+ 1959              	sin_ru:
+ 1960              	.LFB12:
+ 346:trigo_fast.c  **** double sin_ru(double x){ 
+ 1961              		.loc 1 346 0
+ 1962              		.cfi_startproc
+ 1963              	.LVL228:
+ 1964 0fc7 55       		pushl	%ebp	#
+ 1965              		.cfi_def_cfa_offset 8
+ 1966              		.cfi_offset 5, -8
+ 1967 0fc8 89E5     		movl	%esp, %ebp	#,
+ 1968              		.cfi_def_cfa_register 5
+ 1969 0fca 53       		pushl	%ebx	#
+ 1970 0fcb 83EC14   		subl	$20, %esp	#,
+ 1971              		.cfi_offset 3, -12
+ 1972 0fce E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 1972      FF
+ 1973 0fd3 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 1973      0000
+ 347:trigo_fast.c  **** return scs_sin_ru(x);
+ 1974              		.loc 1 347 0
+ 1975 0fd9 DD4508   		fldl	8(%ebp)	# x
+ 1976 0fdc DD1C24   		fstpl	(%esp)	#
+ 1977 0fdf E8FCFFFF 		call	scs_sin_ru@PLT	#
+ 1977      FF
+ 348:trigo_fast.c  **** }
+ 1978              		.loc 1 348 0
+ 1979 0fe4 83C414   		addl	$20, %esp	#,
+ 1980 0fe7 5B       		popl	%ebx	#
+ 1981              		.cfi_restore 3
+ 1982 0fe8 5D       		popl	%ebp	#
+ 1983              		.cfi_restore 5
+ 1984              		.cfi_def_cfa 4, 4
+ 1985 0fe9 C3       		ret
+ 1986              		.cfi_endproc
+ 1987              	.LFE12:
+ 1989              	.globl sin_rd
+ 1991              	sin_rd:
+ 1992              	.LFB11:
+ 341:trigo_fast.c  **** double sin_rd(double x){
+ 1993              		.loc 1 341 0
+ 1994              		.cfi_startproc
+ 1995              	.LVL229:
+ 1996 0fea 55       		pushl	%ebp	#
+ 1997              		.cfi_def_cfa_offset 8
+ 1998              		.cfi_offset 5, -8
+ 1999 0feb 89E5     		movl	%esp, %ebp	#,
+ 2000              		.cfi_def_cfa_register 5
+ 2001 0fed 53       		pushl	%ebx	#
+ 2002 0fee 83EC14   		subl	$20, %esp	#,
+ 2003              		.cfi_offset 3, -12
+ 2004 0ff1 E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 2004      FF
+ 2005 0ff6 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 2005      0000
+ 342:trigo_fast.c  **** return scs_sin_rd(x);
+ 2006              		.loc 1 342 0
+ 2007 0ffc DD4508   		fldl	8(%ebp)	# x
+ 2008 0fff DD1C24   		fstpl	(%esp)	#
+ 2009 1002 E8FCFFFF 		call	scs_sin_rd@PLT	#
+ 2009      FF
+ 343:trigo_fast.c  **** }
+ 2010              		.loc 1 343 0
+ 2011 1007 83C414   		addl	$20, %esp	#,
+ 2012 100a 5B       		popl	%ebx	#
+ 2013              		.cfi_restore 3
+ 2014 100b 5D       		popl	%ebp	#
+ 2015              		.cfi_restore 5
+ 2016              		.cfi_def_cfa 4, 4
+ 2017 100c C3       		ret
+ 2018              		.cfi_endproc
+ 2019              	.LFE11:
+ 2021              	.globl sin_rn
+ 2023              	sin_rn:
+ 2024              	.LFB10:
+ 258:trigo_fast.c  **** double sin_rn(double x){ 
+ 2025              		.loc 1 258 0
+ 2026              		.cfi_startproc
+ 2027              	.LVL230:
+ 2028 100d 55       		pushl	%ebp	#
+ 2029              		.cfi_def_cfa_offset 8
+ 2030              		.cfi_offset 5, -8
+ 2031 100e 89E5     		movl	%esp, %ebp	#,
+ 2032              		.cfi_def_cfa_register 5
+ 2033 1010 56       		pushl	%esi	#
+ 2034 1011 53       		pushl	%ebx	#
+ 2035 1012 83EC40   		subl	$64, %esp	#,
+ 2036              		.cfi_offset 3, -16
+ 2037              		.cfi_offset 6, -12
+ 2038 1015 E8FCFFFF 		call	__i686.get_pc_thunk.bx	#
+ 2038      FF
+ 2039 101a 81C30200 		addl	$_GLOBAL_OFFSET_TABLE_, %ebx	#,
+ 2039      0000
+ 2040 1020 DD4508   		fldl	8(%ebp)	# x
+ 2041 1023 DD55D0   		fstl	-48(%ebp)	# %sfp
+ 269:trigo_fast.c  ****   xx.d=x;
+ 2042              		.loc 1 269 0
+ 2043 1026 DD55C8   		fstl	-56(%ebp)	# %sfp
+ 270:trigo_fast.c  ****   absxhi = xx.i[HI_ENDIAN] & 0x7fffffff;
+ 2044              		.loc 1 270 0
+ 2045 1029 8B4DCC   		movl	-52(%ebp), %ecx	# %sfp, absxhi
+ 2046 102c 81E1FFFF 		andl	$2147483647, %ecx	#, absxhi
+ 2046      FF7F
+ 2047              	.LVL231:
+ 272:trigo_fast.c  ****   if (absxhi < XMAX_SIN_FAST){
+ 2048              		.loc 1 272 0
+ 2049 1032 81F9FFFF 		cmpl	$1068498943, %ecx	#, absxhi
+ 2049      AF3F
+ 2050 1038 7F6E     		jg	.L97	#,
+ 273:trigo_fast.c  ****     if (absxhi <XMAX_RETURN_X_FOR_SIN)
+ 2051              		.loc 1 273 0
+ 2052 103a 81F9FFFF 		cmpl	$1045430271, %ecx	#, absxhi
+ 2052      4F3E
+ 2053 1040 0F8E8701 		jle	.L99	#,
+ 2053      0000
+ 276:trigo_fast.c  ****     yh=x*x;
+ 2054              		.loc 1 276 0
+ 2055 1046 D9C0     		fld	%st(0)	#
+ 2056 1048 D8C9     		fmul	%st(1), %st	#,
+ 2057              	.LVL232:
+ 278:trigo_fast.c  ****     Add12(sh,sl, x, ts*x);
+ 2058              		.loc 1 278 0
+ 2059 104a D9C0     		fld	%st(0)	#
+ 2060 104c DC8B5808 		fmull	s9@GOTOFF(%ebx)	# s9.d
+ 2060      0000
+ 2061 1052 DC833008 		faddl	s7@GOTOFF(%ebx)	# s7.d
+ 2061      0000
+ 2062 1058 D8C9     		fmul	%st(1), %st	#,
+ 2063 105a DC832808 		faddl	s5@GOTOFF(%ebx)	# s5.d
+ 2063      0000
+ 2064 1060 D8C9     		fmul	%st(1), %st	#,
+ 2065 1062 DC832008 		faddl	s3@GOTOFF(%ebx)	# s3.d
+ 2065      0000
+ 2066 1068 D8C9     		fmul	%st(1), %st	#,
+ 2067              	.LBB74:
+ 2068 106a D8CA     		fmul	%st(2), %st	#,
+ 2069              	.LVL233:
+ 2070 106c DCC2     		fadd	%st, %st(2)	#,
+ 2071              	.LVL234:
+ 2072 106e DD45D0   		fldl	-48(%ebp)	# %sfp
+ 2073              	.LVL235:
+ 2074 1071 D8EB     		fsubr	%st(3), %st	#,
+ 2075 1073 DEE9     		fsubrp	%st, %st(1)	#,
+ 2076              	.LBE74:
+ 279:trigo_fast.c  ****     if(sh == (sh + (sl * RN_CST_SINFAST))){	
+ 2077              		.loc 1 279 0
+ 2078 1075 D9C0     		fld	%st(0)	#
+ 2079 1077 DC8B0000 		fmull	.LC38@GOTOFF(%ebx)	#
+ 2079      0000
+ 2080 107d D8C3     		fadd	%st(3), %st	#,
+ 2081 107f D9CB     		fxch	%st(3)	#
+ 2082 1081 DBEB     		fucomi	%st(3), %st	#,
+ 2083 1083 DDDB     		fstp	%st(3)	#
+ 2084 1085 7A06     		jp	.L108	#,
+ 2085 1087 0F843C01 		je	.L110	#,
+ 2085      0000
+ 2086              	.L108:
+ 2087              	.LBB75:
+ 278:trigo_fast.c  ****     Add12(sh,sl, x, ts*x);
+ 2088              		.loc 1 278 0
+ 2089 108d DD5DE8   		fstpl	-24(%ebp)	# sl
+ 2090              	.LVL236:
+ 2091 1090 D9C9     		fxch	%st(1)	#
+ 2092 1092 DD5DF0   		fstpl	-16(%ebp)	# sh
+ 2093              	.LVL237:
+ 2094              	.LBE75:
+ 276:trigo_fast.c  ****     yh=x*x;
+ 2095              		.loc 1 276 0
+ 2096 1095 DD5DE0   		fstpl	-32(%ebp)	# yh
+ 2097              	.LVL238:
+ 282:trigo_fast.c  ****       return scs_sin_rn(x); 
+ 2098              		.loc 1 282 0
+ 2099 1098 DD45D0   		fldl	-48(%ebp)	# %sfp
+ 2100 109b DD1C24   		fstpl	(%esp)	#
+ 2101 109e E8FCFFFF 		call	scs_sin_rn@PLT	#
+ 2101      FF
+ 2102              	.LVL239:
+ 2103 10a3 E9250100 		jmp	.L99	#
+ 2103      00
+ 2104              	.LVL240:
+ 2105              	.L97:
+ 2106 10a8 DDD8     		fstp	%st(0)	#
+ 287:trigo_fast.c  ****   k=trig_range_reduction(&yh, &yl,  x, absxhi, &scs_sin_rn);
+ 2107              		.loc 1 287 0
+ 2108 10aa 8D55D8   		leal	-40(%ebp), %edx	#, tmp86
+ 2109 10ad 8D45E0   		leal	-32(%ebp), %eax	#, tmp87
+ 2110 10b0 8BB30000 		movl	scs_sin_rn@GOT(%ebx), %esi	#, tmp89
+ 2110      0000
+ 2111 10b6 8974240C 		movl	%esi, 12(%esp)	# tmp89,
+ 2112 10ba 894C2408 		movl	%ecx, 8(%esp)	# absxhi,
+ 2113 10be DD45D0   		fldl	-48(%ebp)	# %sfp
+ 2114 10c1 DD1C24   		fstpl	(%esp)	#
+ 2115 10c4 E8F8F1FF 		call	trig_range_reduction	#
+ 2115      FF
+ 2116              	.LVL241:
+ 292:trigo_fast.c  ****   quadrant = (k>>7)&3;
+ 2117              		.loc 1 292 0
+ 2118 10c9 89C6     		movl	%eax, %esi	# k, tmp90
+ 2119 10cb C1FE07   		sarl	$7, %esi	#, tmp90
+ 2120 10ce 83E603   		andl	$3, %esi	#, quadrant
+ 2121              	.LVL242:
+ 293:trigo_fast.c  ****   k=(k&127)<<2;
+ 2122              		.loc 1 293 0
+ 2123 10d1 83E07F   		andl	$127, %eax	#, D.2290
+ 2124              	.LVL243:
+ 2125 10d4 C1E002   		sall	$2, %eax	#, k.374
+ 2126              	.LVL244:
+ 295:trigo_fast.c  ****   if(k<=(64<<2)) {
+ 2127              		.loc 1 295 0
+ 2128 10d7 3D000100 		cmpl	$256, %eax	#, k.374
+ 2128      00
+ 2129 10dc 7F36     		jg	.L100	#,
+ 296:trigo_fast.c  ****     sah=sincosTable[k+0].d; /* sin(a), high part */
+ 2130              		.loc 1 296 0
+ 2131 10de DD84C300 		fldl	sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 2131      000000
+ 2132 10e5 DD9B0000 		fstpl	sah@GOTOFF(%ebx)	# sah
+ 2132      0000
+ 297:trigo_fast.c  ****     sal=sincosTable[k+1].d; /* sin(a), low part */
+ 2133              		.loc 1 297 0
+ 2134 10eb DD84C308 		fldl	8+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 2134      000000
+ 2135 10f2 DD9B0800 		fstpl	sal@GOTOFF(%ebx)	# sal
+ 2135      0000
+ 298:trigo_fast.c  ****     cah=sincosTable[k+2].d; /* cos(a), high part */
+ 2136              		.loc 1 298 0
+ 2137 10f8 DD84C310 		fldl	16+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 2137      000000
+ 2138 10ff DD9B1000 		fstpl	cah@GOTOFF(%ebx)	# cah
+ 2138      0000
+ 299:trigo_fast.c  ****     cal=sincosTable[k+3].d; /* cos(a), low part */
+ 2139              		.loc 1 299 0
+ 2140 1105 DD84C318 		fldl	24+sincosTable@GOTOFF(%ebx,%eax,8)	# <variable>.d
+ 2140      000000
+ 2141 110c DD9B1800 		fstpl	cal@GOTOFF(%ebx)	# cal
+ 2141      0000
+ 2142 1112 EB3B     		jmp	.L101	#
+ 2143              	.L100:
+ 2144              	.LBB76:
+ 301:trigo_fast.c  ****     int k1=(128<<2) - k;
+ 2145              		.loc 1 301 0
+ 2146 1114 BA000200 		movl	$512, %edx	#, tmp106
+ 2146      00
+ 2147 1119 29C2     		subl	%eax, %edx	# k.374, tmp106
+ 2148              	.LVL245:
+ 302:trigo_fast.c  ****     cah=sincosTable[k1+0].d; /* cos(a), high part */
+ 2149              		.loc 1 302 0
+ 2150 111b DD84D300 		fldl	sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 2150      000000
+ 2151 1122 DD9B1000 		fstpl	cah@GOTOFF(%ebx)	# cah
+ 2151      0000
+ 303:trigo_fast.c  ****     cal=sincosTable[k1+1].d; /* cos(a), low part  */ 
+ 2152              		.loc 1 303 0
+ 2153 1128 DD84D308 		fldl	8+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 2153      000000
+ 2154 112f DD9B1800 		fstpl	cal@GOTOFF(%ebx)	# cal
+ 2154      0000
+ 304:trigo_fast.c  ****     sah=sincosTable[k1+2].d; /* sin(a), high part */
+ 2155              		.loc 1 304 0
+ 2156 1135 DD84D310 		fldl	16+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 2156      000000
+ 2157 113c DD9B0000 		fstpl	sah@GOTOFF(%ebx)	# sah
+ 2157      0000
+ 305:trigo_fast.c  ****     sal=sincosTable[k1+3].d; /* sin(a), low part  */
+ 2158              		.loc 1 305 0
+ 2159 1142 DD84D318 		fldl	24+sincosTable@GOTOFF(%ebx,%edx,8)	# <variable>.d
+ 2159      000000
+ 2160 1149 DD9B0800 		fstpl	sal@GOTOFF(%ebx)	# sal
+ 2160      0000
+ 2161              	.LVL246:
+ 2162              	.L101:
+ 2163              	.LBE76:
+ 321:trigo_fast.c  ****   if (quadrant&1)   /*compute the cos  */
+ 2164              		.loc 1 321 0
+ 2165 114f F7C60100 		testl	$1, %esi	#, quadrant
+ 2165      0000
+ 2166 1155 741A     		je	.L102	#,
+ 322:trigo_fast.c  ****     do_cos(&sh, &sl,  yh,yl);
+ 2167              		.loc 1 322 0
+ 2168 1157 8D55E8   		leal	-24(%ebp), %edx	#, tmp123
+ 2169 115a 8D45F0   		leal	-16(%ebp), %eax	#, tmp124
+ 2170              	.LVL247:
+ 2171 115d DD45D8   		fldl	-40(%ebp)	# yl
+ 2172 1160 DD5C2408 		fstpl	8(%esp)	#
+ 2173              	.LVL248:
+ 2174 1164 DD45E0   		fldl	-32(%ebp)	# yh
+ 2175 1167 DD1C24   		fstpl	(%esp)	#
+ 2176 116a E8B6EFFF 		call	do_cos	#
+ 2176      FF
+ 2177 116f EB18     		jmp	.L103	#
+ 2178              	.LVL249:
+ 2179              	.L102:
+ 324:trigo_fast.c  ****     do_sin(&sh, &sl,  yh,yl);
+ 2180              		.loc 1 324 0
+ 2181 1171 8D55E8   		leal	-24(%ebp), %edx	#, tmp127
+ 2182 1174 8D45F0   		leal	-16(%ebp), %eax	#, tmp128
+ 2183              	.LVL250:
+ 2184 1177 DD45D8   		fldl	-40(%ebp)	# yl
+ 2185 117a DD5C2408 		fstpl	8(%esp)	#
+ 2186              	.LVL251:
+ 2187 117e DD45E0   		fldl	-32(%ebp)	# yh
+ 2188 1181 DD1C24   		fstpl	(%esp)	#
+ 2189 1184 E877EEFF 		call	do_sin	#
+ 2189      FF
+ 2190              	.L103:
+ 327:trigo_fast.c  ****   if(quadrant>=2) { 
+ 2191              		.loc 1 327 0
+ 2192 1189 83FE01   		cmpl	$1, %esi	#, quadrant
+ 2193 118c 7E10     		jle	.L104	#,
+ 2194              	.LVL252:
+ 328:trigo_fast.c  ****     sh = -sh;
+ 2195              		.loc 1 328 0
+ 2196 118e DD45F0   		fldl	-16(%ebp)	# sh
+ 2197 1191 D9E0     		fchs
+ 2198 1193 DD5DF0   		fstpl	-16(%ebp)	# sh
+ 2199              	.LVL253:
+ 329:trigo_fast.c  ****     sl = -sl;
+ 2200              		.loc 1 329 0
+ 2201 1196 DD45E8   		fldl	-24(%ebp)	# sl
+ 2202 1199 D9E0     		fchs
+ 2203 119b DD5DE8   		fstpl	-24(%ebp)	# sl
+ 2204              	.L104:
+ 332:trigo_fast.c  ****   if(sh == (sh + (sl * 1.0004))){	
+ 2205              		.loc 1 332 0
+ 2206 119e DD45F0   		fldl	-16(%ebp)	# sh
+ 2207 11a1 DD830000 		fldl	.LC33@GOTOFF(%ebx)	#
+ 2207      0000
+ 2208 11a7 DC4DE8   		fmull	-24(%ebp)	# sl
+ 2209 11aa D8C1     		fadd	%st(1), %st	#,
+ 2210 11ac D9C9     		fxch	%st(1)	#
+ 2211 11ae DBE9     		fucomi	%st(1), %st	#,
+ 2212 11b0 DDD9     		fstp	%st(1)	#
+ 2213 11b2 7A06     		jp	.L111	#,
+ 2214 11b4 7417     		je	.L99	#,
+ 2215 11b6 DDD8     		fstp	%st(0)	#
+ 2216 11b8 EB02     		jmp	.L109	#
+ 2217              	.L111:
+ 2218 11ba DDD8     		fstp	%st(0)	#
+ 2219              	.L109:
+ 335:trigo_fast.c  ****     return scs_sin_rn(x); 
+ 2220              		.loc 1 335 0
+ 2221 11bc DD45D0   		fldl	-48(%ebp)	# %sfp
+ 2222 11bf DD1C24   		fstpl	(%esp)	#
+ 2223 11c2 E8FCFFFF 		call	scs_sin_rn@PLT	#
+ 2223      FF
+ 2224 11c7 EB04     		jmp	.L99	#
+ 2225              	.LVL254:
+ 2226              	.L110:
+ 2227 11c9 DDD8     		fstp	%st(0)	#
+ 2228 11cb DDD8     		fstp	%st(0)	#
+ 2229              	.LVL255:
+ 2230              	.L99:
+ 338:trigo_fast.c  **** }
+ 2231              		.loc 1 338 0
+ 2232 11cd 83C440   		addl	$64, %esp	#,
+ 2233 11d0 5B       		popl	%ebx	#
+ 2234              		.cfi_restore 3
+ 2235 11d1 5E       		popl	%esi	#
+ 2236              		.cfi_restore 6
+ 2237 11d2 5D       		popl	%ebp	#
+ 2238              		.cfi_restore 5
+ 2239              		.cfi_def_cfa 4, 4
+ 2240 11d3 C3       		ret
+ 2241              		.cfi_endproc
+ 2242              	.LFE10:
+ 2244              		.section	.rodata
+ 2245              		.align 32
+ 2248              	sincosTable:
+ 2249              	# i:
+ 2250 0000 00000000 		.long	0
+ 2251 0004 00000000 		.long	0
+ 2252              	# i:
+ 2253 0008 00000000 		.long	0
+ 2254 000c 00000000 		.long	0
+ 2255              	# i:
+ 2256 0010 00000000 		.long	0
+ 2257 0014 0000F03F 		.long	1072693248
+ 2258              	# i:
+ 2259 0018 00000000 		.long	0
+ 2260 001c 00000000 		.long	0
+ 2261              	# i:
+ 2262 0020 84C7DEFC 		.long	-52508796
+ 2263 0024 D121893F 		.long	1065951697
+ 2264              	# i:
+ 2265 0028 9D6D83BE 		.long	-1098682979
+ 2266 002c 8E87293C 		.long	1009354638
+ 2267              	# i:
+ 2268 0030 DB929B16 		.long	379294427
+ 2269 0034 62FFEF3F 		.long	1072693090
+ 2270              	# i:
+ 2271 0038 0DBD1FC8 		.long	-937444083
+ 2272 003c A3DD853C 		.long	1015405987
+ 2273              	# i:
+ 2274 0040 7E66A3F7 		.long	-140286338
+ 2275 0044 5521993F 		.long	1067000149
+ 2276              	# i:
+ 2277 0048 30011A09 		.long	152699184
+ 2278 004c 631DFBBB 		.long	-1141170845
+ 2279              	# i:
+ 2280 0050 0DCD8460 		.long	1619315981
+ 2281 0054 88FDEF3F 		.long	1072692616
+ 2282              	# i:
+ 2283 0058 CBE45645 		.long	1163322571
+ 2284 005c 4D3581BC 		.long	-1132382899
+ 2285              	# i:
+ 2286 0060 CD559475 		.long	1972655565
+ 2287 0064 65D8A23F 		.long	1067636837
+ 2288              	# i:
+ 2289 0068 C03AA95B 		.long	1537817280
+ 2290 006c F686263C 		.long	1009157878
+ 2291              	# i:
+ 2292 0070 5DF7FEEF 		.long	-268503203
+ 2293 0074 72FAEF3F 		.long	1072691826
+ 2294              	# i:
+ 2295 0078 5659B2CD 		.long	-843949738
+ 2296 007c CDB488BC 		.long	-1131891507
+ 2297              	# i:
+ 2298 0080 14D80DF1 		.long	-250750956
+ 2299 0084 651FA93F 		.long	1068048229
+ 2300              	# i:
+ 2301 0088 909A560D 		.long	223779472
+ 2302 008c BD1229BC 		.long	-1138158915
+ 2303              	# i:
+ 2304 0090 7E6D79E3 		.long	-478581378
+ 2305 0094 21F6EF3F 		.long	1072690721
+ 2306              	# i:
+ 2307 0098 15AA242E 		.long	774154773
+ 2308 009c BC576CBC 		.long	-1133750340
+ 2309              	# i:
+ 2310 00a0 E020F879 		.long	2046304480
+ 2311 00a4 6E65AF3F 		.long	1068459374
+ 2312              	# i:
+ 2313 00a8 FEBF92E3 		.long	-476921858
+ 2314 00ac EBE122BC 		.long	-1138564629
+ 2315              	# i:
+ 2316 00b0 AD718E65 		.long	1703834029
+ 2317 00b4 95F0EF3F 		.long	1072689301
+ 2318              	# i:
+ 2319 00b8 9E4B8AE1 		.long	-511030370
+ 2320 00bc 8C1A803C 		.long	1015028364
+ 2321              	# i:
+ 2322 00c0 F619CE92 		.long	-1831986698
+ 2323 00c4 20D5B23F 		.long	1068684576
+ 2324              	# i:
+ 2325 00c8 2C6BBFA8 		.long	-1463850196
+ 2326 00cc 88A049BC 		.long	-1136025464
+ 2327              	# i:
+ 2328 00d0 3A8801AD 		.long	-1392408518
+ 2329 00d4 CDE9EF3F 		.long	1072687565
+ 2330              	# i:
+ 2331 00d8 357EC6D0 		.long	-792297931
+ 2332 00dc EC21653C 		.long	1013260780
+ 2333              	# i:
+ 2334 00e0 19A49A0A 		.long	177906713
+ 2335 00e4 D0F6B53F 		.long	1068889808
+ 2336              	# i:
+ 2337 00e8 9A6C3FD0 		.long	-801149798
+ 2338 00ec 22404FBC 		.long	-1135656926
+ 2339              	# i:
+ 2340 00f0 095BBDFC 		.long	-54699255
+ 2341 00f4 CAE1EF3F 		.long	1072685514
+ 2342              	# i:
+ 2343 00f8 4E882A20 		.long	539658318
+ 2344 00fc E3236A3C 		.long	1013588963
+ 2345              	# i:
+ 2346 0100 2CB429BC 		.long	-1138117588
+ 2347 0104 A617B93F 		.long	1069094822
+ 2348              	# i:
+ 2349 0108 88D66ED2 		.long	-764488056
+ 2350 010c 18273EBC 		.long	-1136777448
+ 2351              	# i:
+ 2352 0110 2625D1A3 		.long	-1546574554
+ 2353 0114 8DD8EF3F 		.long	1072683149
+ 2354              	# i:
+ 2355 0118 C7118837 		.long	931664327
+ 2356 011c F67D88BC 		.long	-1131905546
+ 2357              	# i:
+ 2358 0120 D5C29EC7 		.long	-945896747
+ 2359 0124 8537BC3F 		.long	1069299589
+ 2360              	# i:
+ 2361 0128 21FB33F1 		.long	-248251615
+ 2362 012c 9DF324BC 		.long	-1138429027
+ 2363              	# i:
+ 2364 0130 7BA66DFD 		.long	-43145605
+ 2365 0134 15CEEF3F 		.long	1072680469
+ 2366              	# i:
+ 2367 0138 094C0D83 		.long	-2096280567
+ 2368 013c 6FDD75BC 		.long	-1133126289
+ 2369              	# i:
+ 2370 0140 0E73A956 		.long	1453945614
+ 2371 0144 4E56BF3F 		.long	1069504078
+ 2372              	# i:
+ 2373 0148 6DE59A72 		.long	1922753901
+ 2374 014c 04274A3C 		.long	1011492612
+ 2375              	# i:
+ 2376 0150 D39FE170 		.long	1893834707
+ 2377 0154 64C2EF3F 		.long	1072677476
+ 2378              	# i:
+ 2379 0158 EEACEC68 		.long	1760341230
+ 2380 015c 86EC813C 		.long	1015147654
+ 2381              	# i:
+ 2382 0160 77F5DACE 		.long	-824511113
+ 2383 0164 F039C13F 		.long	1069627888
+ 2384              	# i:
+ 2385 0168 FA3C1B4D 		.long	1293630714
+ 2386 016c 432365BC 		.long	-1134222525
+ 2387              	# i:
+ 2388 0170 41D79571 		.long	1905645377
+ 2389 0174 79B5EF3F 		.long	1072674169
+ 2390              	# i:
+ 2391 0178 08CC9773 		.long	1939328008
+ 2392 017c ACBF713C 		.long	1014087596
+ 2393              	# i:
+ 2394 0180 3A618E6E 		.long	1854824762
+ 2395 0184 10C8C23F 		.long	1069729808
+ 2396              	# i:
+ 2397 0188 E0119AA8 		.long	-1466297888
+ 2398 018c 0030513C 		.long	1011953664
+ 2399              	# i:
+ 2400 0190 17A5087F 		.long	2131272983
+ 2401 0194 55A7EF3F 		.long	1072670549
+ 2402              	# i:
+ 2403 0198 1F5713CA 		.long	-904702177
+ 2404 019c A8A087BC 		.long	-1131962200
+ 2405              	# i:
+ 2406 01a0 5A3E29B1 		.long	-1322697126
+ 2407 01a4 7655C43F 		.long	1069831542
+ 2408              	# i:
+ 2409 01a8 B1F71941 		.long	1092220849
+ 2410 01ac A28552BC 		.long	-1135442526
+ 2411              	# i:
+ 2412 01b0 9B09C924 		.long	617154971
+ 2413 01b4 F997EF3F 		.long	1072666617
+ 2414              	# i:
+ 2415 01b8 3B96A5EE 		.long	-291137989
+ 2416 01bc E02A8EBC 		.long	-1131533600
+ 2417              	# i:
+ 2418 01c0 C63F8B44 		.long	1149976518
+ 2419 01c4 14E2C53F 		.long	1069933076
+ 2420              	# i:
+ 2421 01c8 C6DA9D77 		.long	2006833862
+ 2422 01cc FF31653C 		.long	1013264895
+ 2423              	# i:
+ 2424 01d0 A94B71FA 		.long	-93238359
+ 2425 01d4 6487EF3F 		.long	1072662372
+ 2426              	# i:
+ 2427 01d8 B6FC8F77 		.long	2005925046
+ 2428 01dc 56B27A3C 		.long	1014674006
+ 2429              	# i:
+ 2430 01e0 31BF50DE 		.long	-565133519
+ 2431 01e4 D96DC73F 		.long	1070034393
+ 2432              	# i:
+ 2433 01e8 2F1B50EC 		.long	-330294481
+ 2434 01ec EED5613C 		.long	1013044718
+ 2435              	# i:
+ 2436 01f0 7720A1A3 		.long	-1549721481
+ 2437 01f4 9975EF3F 		.long	1072657817
+ 2438              	# i:
+ 2439 01f8 5C1943D7 		.long	-683468452
+ 2440 01fc 314F883C 		.long	1015566129
+ 2441              	# i:
+ 2442 0200 0BA6693C 		.long	1013556747
+ 2443 0204 B8F8C83F 		.long	1070135480
+ 2444              	# i:
+ 2445 0208 828DFFB9 		.long	-1174434430
+ 2446 020c 196D62BC 		.long	-1134400231
+ 2447              	# i:
+ 2448 0210 B05CF7CF 		.long	-805872464
+ 2449 0214 9762EF3F 		.long	1072652951
+ 2450              	# i:
+ 2451 0218 D31F362A 		.long	708190163
+ 2452 021c 1762753C 		.long	1014325783
+ 2453              	# i:
+ 2454 0220 5104B025 		.long	632292433
+ 2455 0224 A082CA3F 		.long	1070236320
+ 2456              	# i:
+ 2457 0228 AD84D0FF 		.long	-3111763
+ 2458 022c 057968BC 		.long	-1134003963
+ 2459              	# i:
+ 2460 0230 2D2F0B3B 		.long	990588717
+ 2461 0234 604EEF3F 		.long	1072647776
+ 2462              	# i:
+ 2463 0238 05AC95E6 		.long	-426398715
+ 2464 023c 01EE78BC 		.long	-1132925439
+ 2465              	# i:
+ 2466 0240 634F7E6A 		.long	1786662755
+ 2467 0244 820BCC3F 		.long	1070336898
+ 2468              	# i:
+ 2469 0248 3519529E 		.long	-1638786763
+ 2470 024c 43F11ABC 		.long	-1139084989
+ 2471              	# i:
+ 2472 0250 89E564AC 		.long	-1402673783
+ 2473 0254 F338EF3F 		.long	1072642291
+ 2474              	# i:
+ 2475 0258 E6721FB5 		.long	-1256230170
+ 2476 025c AF7B7DBC 		.long	-1132627025
+ 2477              	# i:
+ 2478 0260 114345E5 		.long	-448445679
+ 2479 0264 4F93CD3F 		.long	1070437199
+ 2480              	# i:
+ 2481 0268 AD077127 		.long	661718957
+ 2482 026c 925B673C 		.long	1013406610
+ 2483              	# i:
+ 2484 0270 DA3A76F7 		.long	-143246630
+ 2485 0274 5222EF3F 		.long	1072636498
+ 2486              	# i:
+ 2487 0278 AB948D1C 		.long	479040683
+ 2488 027c B80C82BC 		.long	-1132327752
+ 2489              	# i:
+ 2490 0280 1B5F217B 		.long	2065784603
+ 2491 0284 F919CF3F 		.long	1070537209
+ 2492              	# i:
+ 2493 0288 C4A21DF1 		.long	-249716028
+ 2494 028c EE2D64BC 		.long	-1134285330
+ 2495              	# i:
+ 2496 0290 D73092FB 		.long	-74305321
+ 2497 0294 7E0AEF3F 		.long	1072630398
+ 2498              	# i:
+ 2499 0298 89496BDC 		.long	-596948599
+ 2500 029c 7A2C753C 		.long	1014312058
+ 2501              	# i:
+ 2502 02a0 AEFD370E 		.long	238550446
+ 2503 02a4 B84FD03F 		.long	1070616504
+ 2504              	# i:
+ 2505 02a8 CC8325B7 		.long	-1222278196
+ 2506 02ac CD1204BC 		.long	-1140583731
+ 2507              	# i:
+ 2508 02b0 C273E4A3 		.long	-1545309246
+ 2509 02b4 78F1EE3F 		.long	1072623992
+ 2510              	# i:
+ 2511 02b8 4F77FE67 		.long	1744729935
+ 2512 02bc 0A31863C 		.long	1015427338
+ 2513              	# i:
+ 2514 02c0 77F6B162 		.long	1655830135
+ 2515 02c4 D211D13F 		.long	1070666194
+ 2516              	# i:
+ 2517 02c8 9AAAB70A 		.long	179808922
+ 2518 02cc C224783C 		.long	1014506690
+ 2519              	# i:
+ 2520 02d0 634968E7 		.long	-412595869
+ 2521 02d4 40D7EE3F 		.long	1072617280
+ 2522              	# i:
+ 2523 02d8 C29CF591 		.long	-1846174526
+ 2524 02dc C7827E3C 		.long	1014923975
+ 2525              	# i:
+ 2526 02e0 3EDB4C3F 		.long	1062001470
+ 2527 02e4 44D3D13F 		.long	1070715716
+ 2528              	# i:
+ 2529 02e8 9E51131C 		.long	471028126
+ 2530 02ec D42067BC 		.long	-1134092076
+ 2531              	# i:
+ 2532 02f0 740BDFC8 		.long	-924906636
+ 2533 02f4 D8BBEE3F 		.long	1072610264
+ 2534              	# i:
+ 2535 02f8 77725E61 		.long	1633579639
+ 2536 02fc 8C6C7C3C 		.long	1014787212
+ 2537              	# i:
+ 2538 0300 069FD52E 		.long	785751814
+ 2539 0304 0694D23F 		.long	1070765062
+ 2540              	# i:
+ 2541 0308 2D61C4A2 		.long	-1564188371
+ 2542 030c 8DD275BC 		.long	-1133129075
+ 2543              	# i:
+ 2544 0310 DA2DC656 		.long	1455828442
+ 2545 0314 419FEE3F 		.long	1072602945
+ 2546              	# i:
+ 2547 0318 1EF8E3E2 		.long	-488376290
+ 2548 031c B160873C 		.long	1015505073
+ 2549              	# i:
+ 2550 0320 5281E1C2 		.long	-1025408686
+ 2551 0324 1054D33F 		.long	1070814224
+ 2552              	# i:
+ 2553 0328 62E0962F 		.long	798416994
+ 2554 032c 00CB73BC 		.long	-1133262080
+ 2555              	# i:
+ 2556 0330 0DD14CAB 		.long	-1421029107
+ 2557 0334 7B81EE3F 		.long	1072595323
+ 2558              	# i:
+ 2559 0338 0A5E6B68 		.long	1751866890
+ 2560 033c FE0A7DBC 		.long	-1132655874
+ 2561              	# i:
+ 2562 0340 01661794 		.long	-1810405887
+ 2563 0344 5C13D43F 		.long	1070863196
+ 2564              	# i:
+ 2565 0348 1825FA4A 		.long	1257907480
+ 2566 034c 7CC9703C 		.long	1014024572
+ 2567              	# i:
+ 2568 0350 12E148EC 		.long	-330768110
+ 2569 0354 8862EE3F 		.long	1072587400
+ 2570              	# i:
+ 2571 0358 547784F2 		.long	-226199724
+ 2572 035c 566B61BC 		.long	-1134466218
+ 2573              	# i:
+ 2574 0360 6AE77842 		.long	1115219818
+ 2575 0364 E2D1D43F 		.long	1070911970
+ 2576              	# i:
+ 2577 0368 58287918 		.long	410593368
+ 2578 036c 7241623C 		.long	1013072242
+ 2579              	# i:
+ 2580 0370 7EC12B4B 		.long	1261158782
+ 2581 0374 6A42EE3F 		.long	1072579178
+ 2582              	# i:
+ 2583 0378 82487489 		.long	-1988867966
+ 2584 037c 38878A3C 		.long	1015711544
+ 2585              	# i:
+ 2586 0380 DD1FAB75 		.long	1974149085
+ 2587 0384 9A8FD53F 		.long	1070960538
+ 2588              	# i:
+ 2589 0388 20F68CD5 		.long	-712182240
+ 2590 038c C0FD1EBC 		.long	-1138819648
+ 2591              	# i:
+ 2592 0390 E586F604 		.long	83265253
+ 2593 0394 2121EE3F 		.long	1072570657
+ 2594              	# i:
+ 2595 0398 2765126C 		.long	1813144871
+ 2596 039c C71480BC 		.long	-1132456761
+ 2597              	# i:
+ 2598 03a0 C6273FDD 		.long	-583063610
+ 2599 03a4 7D4CD63F 		.long	1071008893
+ 2600              	# i:
+ 2601 03a8 2141664A 		.long	1248215329
+ 2602 03ac 2B0D513C 		.long	1011944747
+ 2603              	# i:
+ 2604 03b0 2BBE2D62 		.long	1647164971
+ 2605 03b4 AEFEED3F 		.long	1072561838
+ 2606              	# i:
+ 2607 03b8 67554288 		.long	-2008918681
+ 2608 03bc EA1485BC 		.long	-1132129046
+ 2609              	# i:
+ 2610 03c0 9F45FA30 		.long	821708191
+ 2611 03c4 8508D73F 		.long	1071057029
+ 2612              	# i:
+ 2613 03c8 5D4C86E0 		.long	-528069539
+ 2614 03cc 194B74BC 		.long	-1133229287
+ 2615              	# i:
+ 2616 03d0 3CC2CCB6 		.long	-1228094916
+ 2617 03d4 13DBED3F 		.long	1072552723
+ 2618              	# i:
+ 2619 03d8 B37D10C6 		.long	-971997773
+ 2620 03dc 373C883C 		.long	1015561271
+ 2621              	# i:
+ 2622 03e0 E7CC1D31 		.long	824036583
+ 2623 03e4 A9C3D73F 		.long	1071104937
+ 2624              	# i:
+ 2625 03e8 D9E8F31E 		.long	519301337
+ 2626 03ec F2A3193C 		.long	1008313330
+ 2627              	# i:
+ 2628 03f0 9BA03862 		.long	1647878299
+ 2629 03f4 52B6ED3F 		.long	1072543314
+ 2630              	# i:
+ 2631 03f8 6094E6EA 		.long	-353987488
+ 2632 03fc E7DE7ABC 		.long	-1132798233
+ 2633              	# i:
+ 2634 0400 63A9AEA6 		.long	-1498502813
+ 2635 0404 E27DD83F 		.long	1071152610
+ 2636              	# i:
+ 2637 0408 10A6D5D3 		.long	-740973040
+ 2638 040c ED2C67BC 		.long	-1134088979
+ 2639              	# i:
+ 2640 0410 468D32CF 		.long	-818770618
+ 2641 0414 6B90ED3F 		.long	1072533611
+ 2642              	# i:
+ 2643 0418 C21A2310 		.long	270736066
+ 2644 041c E657743C 		.long	1014257638
+ 2645              	# i:
+ 2646 0420 D793BC63 		.long	1673302999
+ 2647 0424 2A37D93F 		.long	1071200042
+ 2648              	# i:
+ 2649 0428 B1D55A9E 		.long	-1638214223
+ 2650 042c 3184663C 		.long	1013351473
+ 2651              	# i:
+ 2652 0430 8BE6C973 		.long	1942611595
+ 2653 0434 6169ED3F 		.long	1072523617
+ 2654              	# i:
+ 2655 0438 553D39C6 		.long	-969327275
+ 2656 043c 618C7EBC 		.long	-1132557215
+ 2657              	# i:
+ 2658 0440 8AEDA843 		.long	1135144330
+ 2659 0444 79EFD93F 		.long	1071247225
+ 2660              	# i:
+ 2661 0448 ABDB0B29 		.long	688642987
+ 2662 044c 81DA663C 		.long	1013373569
+ 2663              	# i:
+ 2664 0450 3AC94DD1 		.long	-783431366
+ 2665 0454 3441ED3F 		.long	1072513332
+ 2666              	# i:
+ 2667 0458 F25AD295 		.long	-1781376270
+ 2668 045c 52EF84BC 		.long	-1132138670
+ 2669              	# i:
+ 2670 0460 CA3F6D2B 		.long	728580042
+ 2671 0464 C8A6DA3F 		.long	1071294152
+ 2672              	# i:
+ 2673 0468 F7CCE56E 		.long	1860553975
+ 2674 046c 105F7DBC 		.long	-1132634352
+ 2675              	# i:
+ 2676 0470 DC353E74 		.long	1950234076
+ 2677 0474 E717ED3F 		.long	1072502759
+ 2678              	# i:
+ 2679 0478 0A134035 		.long	893391626
+ 2680 047c DA0151BC 		.long	-1135541798
+ 2681              	# i:
+ 2682 0480 C05CE109 		.long	165764288
+ 2683 0484 105DDB3F 		.long	1071340816
+ 2684              	# i:
+ 2685 0488 834197CB 		.long	-879279741
+ 2686 048c 62B3653C 		.long	1013298018
+ 2687              	# i:
+ 2688 0490 73C73CF4 		.long	-197343373
+ 2689 0494 7AEDEC3F 		.long	1072491898
+ 2690              	# i:
+ 2691 0498 AE58ABB5 		.long	-1247061842
+ 2692 049c 6B7B5EBC 		.long	-1134658709
+ 2693              	# i:
+ 2694 04a0 E71E01D8 		.long	-671015193
+ 2695 04a4 4912DC3F 		.long	1071387209
+ 2696              	# i:
+ 2697 04a8 065251BB 		.long	-1152298490
+ 2698 04ac AA1378BC 		.long	-1132981334
+ 2699              	# i:
+ 2700 04b0 5CFCFCF3 		.long	-201524132
+ 2701 04b4 F0C1EC3F 		.long	1072480752
+ 2702              	# i:
+ 2703 04b8 ABF6683B 		.long	996734635
+ 2704 04bc 61577E3C 		.long	1014912865
+ 2705              	# i:
+ 2706 04c0 5EC43199 		.long	-1724791714
+ 2707 04c4 6EC6DC3F 		.long	1071433326
+ 2708              	# i:
+ 2709 04c8 8F7FC359 		.long	1505984399
+ 2710 04cc 0E85563C 		.long	1012303118
+ 2711              	# i:
+ 2712 04d0 F5113421 		.long	557060597
+ 2713 04d4 4B95EC3F 		.long	1072469323
+ 2714              	# i:
+ 2715 04d8 0366941E 		.long	513041923
+ 2716 04dc 76FB52BC 		.long	-1135412362
+ 2717              	# i:
+ 2718 04e0 89E3865B 		.long	1535566729
+ 2719 04e4 7779DD3F 		.long	1071479159
+ 2720              	# i:
+ 2721 04e8 7505BC87 		.long	-2017720971
+ 2722 04ec EC50753C 		.long	1014321388
+ 2723              	# i:
+ 2724 04f0 9B738834 		.long	881357723
+ 2725 04f4 8B67EC3F 		.long	1072457611
+ 2726              	# i:
+ 2727 04f8 5BFFC5C7 		.long	-943325349
+ 2728 04fc CA866D3C 		.long	1013810890
+ 2729              	# i:
+ 2730 0500 3BF60638 		.long	939980347
+ 2731 0504 5D2BDE3F 		.long	1071524701
+ 2732              	# i:
+ 2733 0508 41683C1D 		.long	490498113
+ 2734 050c 890D5E3C 		.long	1012796809
+ 2735              	# i:
+ 2736 0510 B1BD80F1 		.long	-243221071
+ 2737 0514 B238EC3F 		.long	1072445618
+ 2738              	# i:
+ 2739 0518 078D7C75 		.long	1971096839
+ 2740 051c B1E076BC 		.long	-1133059919
+ 2741              	# i:
+ 2742 0520 D678EF52 		.long	1391425750
+ 2743 0524 19DCDE3F 		.long	1071569945
+ 2744              	# i:
+ 2745 0528 E6DE3EC3 		.long	-1019289882
+ 2746 052c F7D07DBC 		.long	-1132605193
+ 2747              	# i:
+ 2748 0530 49557226 		.long	645027145
+ 2749 0534 C408EC3F 		.long	1072433348
+ 2750              	# i:
+ 2751 0538 46290ED8 		.long	-670160570
+ 2752 053c 7F155B3C 		.long	1012602239
+ 2753              	# i:
+ 2754 0540 BA9AF8DB 		.long	-604464454
+ 2755 0544 A48BDF3F 		.long	1071614884
+ 2756              	# i:
+ 2757 0548 B876B7C1 		.long	-1044941128
+ 2758 054c 1FEC32BC 		.long	-1137513441
+ 2759              	# i:
+ 2760 0550 2A956FAC 		.long	-1401973462
+ 2761 0554 C0D7EB3F 		.long	1072420800
+ 2762              	# i:
+ 2763 0558 0A70AC32 		.long	850161674
+ 2764 055c A72588BC 		.long	-1131928153
+ 2765              	# i:
+ 2766 0560 B73E4C87 		.long	-2025046345
+ 2767 0564 FC1CE03F 		.long	1071652092
+ 2768              	# i:
+ 2769 0568 8C36C2E7 		.long	-406702452
+ 2770 056c 354A73BC 		.long	-1133295051
+ 2771              	# i:
+ 2772 0570 D2903567 		.long	1731563730
+ 2773 0574 AAA5EB3F 		.long	1072407978
+ 2774              	# i:
+ 2775 0578 B6530737 		.long	923227062
+ 2776 057c 4EEA873C 		.long	1015540302
+ 2777              	# i:
+ 2778 0580 EEFF2299 		.long	-1725759506
+ 2779 0584 8773E03F 		.long	1071674247
+ 2780              	# i:
+ 2781 0588 6C404743 		.long	1128743020
+ 2782 058c 015A8ABC 		.long	-1131783679
+ 2783              	# i:
+ 2784 0590 3E6E1945 		.long	1159294526
+ 2785 0594 8372EB3F 		.long	1072394883
+ 2786              	# i:
+ 2787 0598 616D4E32 		.long	844000609
+ 2788 059c 9FC68BBC 		.long	-1131690337
+ 2789              	# i:
+ 2790 05a0 8F895D4D 		.long	1297975695
+ 2791 05a4 70C9E03F 		.long	1071696240
+ 2792              	# i:
+ 2793 05a8 B2E96EDE 		.long	-563156558
+ 2794 05ac D7D388BC 		.long	-1131883561
+ 2795              	# i:
+ 2796 05b0 1257F53E 		.long	1056266002
+ 2797 05b4 4D3EEB3F 		.long	1072381517
+ 2798              	# i:
+ 2799 05b8 93A411BF 		.long	-1089362797
+ 2800 05bc B8B68EBC 		.long	-1131497800
+ 2801              	# i:
+ 2802 05c0 234B1B54 		.long	1411074851
+ 2803 05c4 B31EE13F 		.long	1071718067
+ 2804              	# i:
+ 2805 05c8 F1E4AB69 		.long	1772872945
+ 2806 05cc 3BF28EBC 		.long	-1131482565
+ 2807              	# i:
+ 2808 05d0 00021558 		.long	1477771776
+ 2809 05d4 0A09EB3F 		.long	1072367882
+ 2810              	# i:
+ 2811 05d8 CEFC0F30 		.long	806354126
+ 2812 05dc DA2689BC 		.long	-1131862310
+ 2813              	# i:
+ 2814 05e0 49DBDE63 		.long	1675549513
+ 2815 05e4 4D73E13F 		.long	1071739725
+ 2816              	# i:
+ 2817 05e8 7505C5CC 		.long	-859503243
+ 2818 05ec F2EE87BC 		.long	-1131942158
+ 2819              	# i:
+ 2820 05f0 11D5219E 		.long	-1641949935
+ 2821 05f4 BCD2EA3F 		.long	1072353980
+ 2822              	# i:
+ 2823 05f8 48A5BE07 		.long	129934664
+ 2824 05fc BE7F84BC 		.long	-1132167234
+ 2825              	# i:
+ 2826 0600 C868AE39 		.long	967731400
+ 2827 0604 3BC7E13F 		.long	1071761211
+ 2828              	# i:
+ 2829 0608 00667F26 		.long	645883392
+ 2830 060c DD258B3C 		.long	1015752157
+ 2831              	# i:
+ 2832 0610 A3A10E29 		.long	688824739
+ 2833 0614 669BEA3F 		.long	1072339814
+ 2834              	# i:
+ 2835 0618 C8DAB6E8 		.long	-390669624
+ 2836 061c 30F6393C 		.long	1010431536
+ 2837              	# i:
+ 2838 0620 59EB3399 		.long	-1724650663
+ 2839 0624 791AE23F 		.long	1071782521
+ 2840              	# i:
+ 2841 0628 B28FC677 		.long	2009501618
+ 2842 062c B1A783BC 		.long	-1132222543
+ 2843              	# i:
+ 2844 0630 E2FA021B 		.long	453180130
+ 2845 0634 0963EA3F 		.long	1072325385
+ 2846              	# i:
+ 2847 0638 108D2452 		.long	1378127120
+ 2848 063c 11917EBC 		.long	-1132556015
+ 2849              	# i:
+ 2850 0640 DF12DD4C 		.long	1289556703
+ 2851 0644 056DE23F 		.long	1071803653
+ 2852              	# i:
+ 2853 0648 0C77F33E 		.long	1056143116
+ 2854 064c 74DA85BC 		.long	-1132078476
+ 2855              	# i:
+ 2856 0650 822746A0 		.long	-1606015102
+ 2857 0654 A729EA3F 		.long	1072310695
+ 2858              	# i:
+ 2859 0658 75F15D01 		.long	22933877
+ 2860 065c BB2871BC 		.long	-1133434693
+ 2861              	# i:
+ 2862 0660 EAF3FA25 		.long	637203434
+ 2863 0664 DBBEE23F 		.long	1071824603
+ 2864              	# i:
+ 2865 0668 46EE96C7 		.long	-946409914
+ 2866 066c 814951BC 		.long	-1135523455
+ 2867              	# i:
+ 2868 0670 94AF29EF 		.long	-282480748
+ 2869 0674 43EFE93F 		.long	1072295747
+ 2870              	# i:
+ 2871 0678 C24504B6 		.long	-1241233982
+ 2872 067c FC1D7B3C 		.long	1014701564
+ 2873              	# i:
+ 2874 0680 3570E1FC 		.long	-52334539
+ 2875 0684 F70FE33F 		.long	1071845367
+ 2876              	# i:
+ 2877 0688 6F4AF726 		.long	653740655
+ 2878 068c C6FC6EBC 		.long	-1133577018
+ 2879              	# i:
+ 2880 0690 4187F347 		.long	1207142209
+ 2881 0694 E0B3E93F 		.long	1072280544
+ 2882              	# i:
+ 2883 0698 74247186 		.long	-2039405452
+ 2884 069c E20E83BC 		.long	-1132261662
+ 2885              	# i:
+ 2886 06a0 F35906B1 		.long	-1324983821
+ 2887 06a4 5860E33F 		.long	1071865944
+ 2888              	# i:
+ 2889 06a8 E75758A3 		.long	-1554491417
+ 2890 06ac B3FC81BC 		.long	-1132331853
+ 2891              	# i:
+ 2892 06b0 42D7C7F4 		.long	-188229822
+ 2893 06b4 7E77E93F 		.long	1072265086
+ 2894              	# i:
+ 2895 06b8 5E6640A2 		.long	-1572837794
+ 2896 06bc 795481BC 		.long	-1132374919
+ 2897              	# i:
+ 2898 06c0 B9502029 		.long	689983673
+ 2899 06c4 FAAFE33F 		.long	1071886330
+ 2900              	# i:
+ 2901 06c8 644995E3 		.long	-476755612
+ 2902 06cc 253E7E3C 		.long	1014906405
+ 2903              	# i:
+ 2904 06d0 FB639249 		.long	1234330619
+ 2905 06d4 223AE93F 		.long	1072249378
+ 2906              	# i:
+ 2907 06d8 0BDF20A9 		.long	-1457463541
+ 2908 06dc 19D4833C 		.long	1015272473
+ 2909              	# i:
+ 2910 06e0 D4564553 		.long	1397053140
+ 2911 06e4 D9FEE33F 		.long	1071906521
+ 2912              	# i:
+ 2913 06e8 61508C60 		.long	1619808353
+ 2914 06ec 1669833C 		.long	1015245078
+ 2915              	# i:
+ 2916 06f0 0D94EFA3 		.long	-1544580083
+ 2917 06f4 CCFBE83F 		.long	1072233420
+ 2918              	# i:
+ 2919 06f8 F1F2869C 		.long	-1668877583
+ 2920 06fc A9DF66BC 		.long	-1134108759
+ 2921              	# i:
+ 2922 0700 D61D0925 		.long	621354454
+ 2923 0704 F34CE43F 		.long	1071926515
+ 2924              	# i:
+ 2925 0708 B3C6FD2C 		.long	754828979
+ 2926 070c 6A07683C 		.long	1013450602
+ 2927              	# i:
+ 2928 0710 4117156B 		.long	1796544321
+ 2929 0714 80BCE83F 		.long	1072217216
+ 2930              	# i:
+ 2931 0718 6D33D12E 		.long	785462125
+ 2932 071c E1C582BC 		.long	-1132280351
+ 2933              	# i:
+ 2934 0720 39099B9B 		.long	-1684338375
+ 2935 0724 449AE43F 		.long	1071946308
+ 2936              	# i:
+ 2937 0728 949B716D 		.long	1836161940
+ 2938 072c E17E82BC 		.long	-1132298527
+ 2939              	# i:
+ 2940 0730 BF2EBA0F 		.long	263859903
+ 2941 0734 407CE83F 		.long	1072200768
+ 2942              	# i:
+ 2943 0738 CD643F0C 		.long	205481165
+ 2944 073c BCDA82BC 		.long	-1132275012
+ 2945              	# i:
+ 2946 0740 E9E5E3BB 		.long	-1142692375
+ 2947 0744 CAE6E43F 		.long	1071965898
+ 2948              	# i:
+ 2949 0748 27B3CEED 		.long	-305220825
+ 2950 074c 93C2633C 		.long	1013170835
+ 2951              	# i:
+ 2952 0750 6E97FF0B 		.long	201299822
+ 2953 0754 0E3BE83F 		.long	1072184078
+ 2954              	# i:
+ 2955 0758 7534EAF8 		.long	-118868875
+ 2956 075c 20F476BC 		.long	-1133054944
+ 2957              	# i:
+ 2958 0760 9655A392 		.long	-1834789482
+ 2959 0764 8232E53F 		.long	1071985282
+ 2960              	# i:
+ 2961 0768 5702DA89 		.long	-1982201257
+ 2962 076c EB127ABC 		.long	-1132850453
+ 2963              	# i:
+ 2964 0770 711757E3 		.long	-480831631
+ 2965 0774 ECF8E73F 		.long	1072167148
+ 2966              	# i:
+ 2967 0778 17C993CE 		.long	-829175529
+ 2968 077c D8C889BC 		.long	-1131820840
+ 2969              	# i:
+ 2970 0780 A0EC8C34 		.long	881650848
+ 2971 0784 697DE53F 		.long	1072004457
+ 2972              	# i:
+ 2973 0788 B2FB2B99 		.long	-1725170766
+ 2974 078c 205787BC 		.long	-1131981024
+ 2975              	# i:
+ 2976 0790 AFAF6A22 		.long	577417135
+ 2977 0794 DFB5E73F 		.long	1072149983
+ 2978              	# i:
+ 2979 0798 D70ADFAC 		.long	-1394668841
+ 2980 079c 37F570BC 		.long	-1133447881
+ 2981              	# i:
+ 2982 07a0 8C0165BE 		.long	-1100676724
+ 2983 07a4 7BC7E53F 		.long	1072023419
+ 2984              	# i:
+ 2985 07a8 2AC30B9C 		.long	-1676950742
+ 2986 07ac EA69803C 		.long	1015048682
+ 2987              	# i:
+ 2988 07b0 6172035F 		.long	1594061409
+ 2989 07b4 E771E73F 		.long	1072132583
+ 2990              	# i:
+ 2991 07b8 8F06848D 		.long	-1920727409
+ 2992 07bc CECF753C 		.long	1014353870
+ 2993              	# i:
+ 2994 07c0 DF2C1D55 		.long	1427975391
+ 2995 07c4 B710E63F 		.long	1072042167
+ 2996              	# i:
+ 2997 07c8 372AFF52 		.long	1392454199
+ 2998 07cc B35172BC 		.long	-1133358669
+ 2999              	# i:
+ 3000 07d0 96FFEF37 		.long	938475414
+ 3001 07d4 082DE73F 		.long	1072114952
+ 3002              	# i:
+ 3003 07d8 5C911D0F 		.long	253595996
+ 3004 07dc EFD4803C 		.long	1015076079
+ 3005              	# i:
+ 3006 07e0 3D78F025 		.long	636516413
+ 3007 07e4 1959E63F 		.long	1072060697
+ 3008              	# i:
+ 3009 07e8 23DEF5FB 		.long	-67772893
+ 3010 07ec 643D8C3C 		.long	1015823716
+ 3011              	# i:
+ 3012 07f0 AFA8EA54 		.long	1424664751
+ 3013 07f4 44E7E63F 		.long	1072097092
+ 3014              	# i:
+ 3015 07f8 6E224EC8 		.long	-934403474
+ 3016 07fc 03BC8DBC 		.long	-1131561981
+ 3017              	# i:
+ 3018 0800 CD3B7F66 		.long	1719614413
+ 3019 0804 9EA0E63F 		.long	1072079006
+ 3020              	# i:
+ 3021 0808 5664B213 		.long	330458198
+ 3022 080c 34DD8BBC 		.long	-1131684556
+ 3023              	# i:
+ 3024 0810 CD3B7F66 		.long	1719614413
+ 3025 0814 9EA0E63F 		.long	1072079006
+ 3026              	# i:
+ 3027 0818 5664B213 		.long	330458198
+ 3028 081c 34DD8BBC 		.long	-1131684556
+ 3029              		.align 4
+ 3032              	s3:
+ 3033              	# i:
+ 3034 0820 55555555 		.long	1431655765
+ 3035 0824 5555C5BF 		.long	-1077586603
+ 3036              		.align 4
+ 3039              	s5:
+ 3040              	# i:
+ 3041 0828 11111111 		.long	286331153
+ 3042 082c 1111813F 		.long	1065423121
+ 3043              		.align 4
+ 3046              	s7:
+ 3047              	# i:
+ 3048 0830 1AA0011A 		.long	436314138
+ 3049 0834 A0012ABF 		.long	-1087766112
+ 3050              		.align 4
+ 3053              	c2:
+ 3054              	# i:
+ 3055 0838 00000000 		.long	0
+ 3056 083c 0000E0BF 		.long	-1075838976
+ 3057              		.align 4
+ 3060              	c4:
+ 3061              	# i:
+ 3062 0840 55555555 		.long	1431655765
+ 3063 0844 5555A53F 		.long	1067799893
+ 3064              		.align 4
+ 3067              	c6:
+ 3068              	# i:
+ 3069 0848 176CC116 		.long	381774871
+ 3070 084c 6CC156BF 		.long	-1084833428
+ 3071              		.align 4
+ 3074              	c8:
+ 3075              	# i:
+ 3076 0850 1AA0011A 		.long	436314138
+ 3077 0854 A001FA3E 		.long	1056571808
+ 3078              		.align 4
+ 3081              	s9:
+ 3082              	# i:
+ 3083 0858 34C756A5 		.long	-1521039564
+ 3084 085c E31DC73E 		.long	1053236707
+ 3085              		.local	sah
+ 3086              		.comm	sah,8,8
+ 3087              		.local	sal
+ 3088              		.comm	sal,8,8
+ 3089              		.local	cah
+ 3090              		.comm	cah,8,8
+ 3091              		.local	cal
+ 3092              		.comm	cal,8,8
+ 3093              		.comm	crlibm_second_step_taken,4,4
+ 3094              		.section	.rodata.cst8,"aM",@progbits,8
+ 3095              		.align 8
+ 3096              	.LC1:
+ 3097 0000 00000002 		.long	33554432
+ 3098 0004 0000A041 		.long	1101004800
+ 3099              		.align 8
+ 3100              	.LC7:
+ 3101 0008 83C8C96D 		.long	1841940611
+ 3102 000c 305F5440 		.long	1079271216
+ 3103              		.align 8
+ 3104              	.LC9:
+ 3105 0010 182D4454 		.long	1413754136
+ 3106 0014 FB2189BF 		.long	-1081531909
+ 3107              		.section	.rodata.cst4,"aM",@progbits,4
+ 3108              		.align 4
+ 3109              	.LC11:
+ 3110 0000 0000C059 		.long	1505755136
+ 3111              		.section	.rodata.cst8
+ 3112              		.align 8
+ 3113              	.LC16:
+ 3114 0018 00000058 		.long	1476395008
+ 3115 001c FB2189BF 		.long	-1081531909
+ 3116              		.section	.rodata.cst4
+ 3117              		.align 4
+ 3118              	.LC17:
+ 3119 0004 BAF4EE2E 		.long	787412154
+ 3120              		.section	.rodata.cst8
+ 3121              		.align 8
+ 3122              	.LC20:
+ 3123 0020 075C1433 		.long	856972295
+ 3124 0024 26A621BC 		.long	-1138645466
+ 3125              		.align 8
+ 3126              	.LC21:
+ 3127 0028 00000030 		.long	805306368
+ 3128 002c 26A621BC 		.long	-1138645466
+ 3129              		.align 8
+ 3130              	.LC22:
+ 3131 0030 00000038 		.long	939524096
+ 3132 0034 E0A278BA 		.long	-1166499104
+ 3133              		.align 8
+ 3134              	.LC23:
+ 3135 0038 BC8FEDB7 		.long	3085799356
+ 3136 003c 7619AF38 		.long	950999414
+ 3137              		.align 8
+ 3138              	.LC24:
+ 3139 0040 00004054 		.long	1413480448
+ 3140 0044 FB2189BF 		.long	-1081531909
+ 3141              		.align 8
+ 3142              	.LC25:
+ 3143 0048 3163621A 		.long	442655537
+ 3144 004c 61B460BD 		.long	-1117735839
+ 3145              		.section	.rodata.cst4
+ 3146              		.align 4
+ 3147              	.LC26:
+ 3148 0008 D80F49BC 		.long	3158904792
+ 3149              		.align 4
+ 3150              	.LC27:
+ 3151 000c 608828B1 		.long	2972223584
+ 3152              		.section	.rodata.cst8
+ 3153              		.align 8
+ 3154              	.LC28:
+ 3155 0050 749D393B 		.long	993631604
+ 3156 0054 CB3DD73C 		.long	1020739019
+ 3157              		.align 8
+ 3158              	.LC29:
+ 3159 0058 749D393B 		.long	993631604
+ 3160 005c CB3DD7BC 		.long	-1126744629
+ 3161              		.section	.rodata.cst4
+ 3162              		.align 4
+ 3163              	.LC30:
+ 3164 0010 00000043 		.long	1124073472
+ 3165              		.align 4
+ 3166              	.LC31:
+ 3167 0014 0000003C 		.long	1006632960
+ 3168              		.section	.rodata.cst8
+ 3169              		.align 8
+ 3170              	.LC33:
+ 3171 0060 C4B12E6E 		.long	1848553924
+ 3172 0064 A301F03F 		.long	1072693667
+ 3173              		.align 8
+ 3174              	.LC34:
+ 3175 0068 AC8E1CE9 		.long	3910962860
+ 3176 006c 0C0CF03F 		.long	1072696332
+ 3177              		.align 8
+ 3178              	.LC38:
+ 3179 0070 4C8BFA24 		.long	620399436
+ 3180 0074 7718F03F 		.long	1072699511
+ 3181              		.section	.text.__i686.get_pc_thunk.cx,"axG",@progbits,__i686.get_pc_thunk.cx,comdat
+ 3182              	.globl __i686.get_pc_thunk.cx
+ 3183              		.hidden	__i686.get_pc_thunk.cx
+ 3185              	__i686.get_pc_thunk.cx:
+ 3186              	.LFB22:
+ 3187              		.cfi_startproc
+ 3188 0000 8B0C24   		movl	(%esp), %ecx	#,
+ 3189 0003 C3       		ret
+ 3190              		.cfi_endproc
+ 3191              	.LFE22:
+ 3192              		.section	.text.__i686.get_pc_thunk.bx,"axG",@progbits,__i686.get_pc_thunk.bx,comdat
+ 3193              	.globl __i686.get_pc_thunk.bx
+ 3194              		.hidden	__i686.get_pc_thunk.bx
+ 3196              	__i686.get_pc_thunk.bx:
+ 3197              	.LFB23:
+ 3198              		.cfi_startproc
+ 3199 0000 8B1C24   		movl	(%esp), %ebx	#,
+ 3200 0003 C3       		ret
+ 3201              		.cfi_endproc
+ 3202              	.LFE23:
+ 3203              		.text
+ 3204              	.Letext0:

@@ -1,0 +1,187 @@
+ 172:trigo_fast.c  ****       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+ 893              		.loc 1 172 0
+ 894 092f 8D830000 		leal	.LC2@GOTOFF(%ebx), %eax	#, tmp309
+ 894      0000
+ 895 0935 89C5     		movl	%eax, %ebp	# tmp309, tmp309
+ 896              	.LVL103:
+ 897 0937 890424   		movl	%eax, (%esp)	# tmp309,
+ 898 093a E8FCFFFF 		call	puts@PLT	#
+ 898      FF
+ 899              	.LVL104:
+ 900 093f C744241C 		movl	$1413754136, 28(%esp)	#,
+ 900      182D4454 
+ 901 0947 C7442420 		movl	$-1081531909, 32(%esp)	#,
+ 901      FB2189BF 
+ 902 094f F20F10B4 		movsd	128(%esp), %xmm6	# %sfp, _u
+ 902      24800000 
+ 902      00
+ 903 0958 F20F1174 		movsd	%xmm6, 20(%esp)	# _u,
+ 903      2414
+ 904 095e D9EE     		fldz
+ 905 0960 DD54240C 		fstl	12(%esp)	#
+ 906 0964 DD5C2404 		fstpl	4(%esp)	#
+ 907 0968 8D830000 		leal	.LC3@GOTOFF(%ebx), %eax	#, tmp313
+ 907      0000
+ 908 096e 898424C0 		movl	%eax, 192(%esp)	# tmp313, %sfp
+ 908      000000
+ 909 0975 890424   		movl	%eax, (%esp)	# tmp313,
+ 910 0978 E8FCFFFF 		call	printf@PLT	#
+ 910      FF
+ 911              	.LVL105:
+ 912 097d C744240C 		movl	$1413754136, 12(%esp)	#,
+ 912      182D4454 
+ 913 0985 C7442410 		movl	$-1081531909, 16(%esp)	#,
+ 913      FB2189BF 
+ 914 098d F20F10B4 		movsd	128(%esp), %xmm6	# %sfp, _u
+ 914      24800000 
+ 914      00
+ 915 0996 F20F1174 		movsd	%xmm6, 4(%esp)	# _u,
+ 915      2404
+ 916 099c 8D8B0000 		leal	.LC4@GOTOFF(%ebx), %ecx	#, tmp315
+ 916      0000
+ 917 09a2 898C24C4 		movl	%ecx, 196(%esp)	# tmp315, %sfp
+ 917      000000
+ 918 09a9 890C24   		movl	%ecx, (%esp)	# tmp315,
+ 919 09ac E8FCFFFF 		call	printf@PLT	#
+ 919      FF
+ 920              	.LVL106:
+ 921 09b1 DD842480 		fldl	128(%esp)	# %sfp
+ 921      000000
+ 922 09b8 D9C0     		fld	%st(0)	#
+ 923 09ba DB7C2470 		fstpt	112(%esp)	# %sfp
+ 924 09be DC8B0000 		fmull	.LC5@GOTOFF(%ebx)	#
+ 924      0000
+ 925 09c4 DD5C2440 		fstpl	64(%esp)	# %sfp
+ 926              	.LVL107:
+ 927 09c8 C744240C 		movl	$1466461315, 12(%esp)	#,
+ 927      836C6857 
+ 928 09d0 C7442410 		movl	$-1053220357, 16(%esp)	#,
+ 928      FB2139C1 
+ 929 09d8 F20F107C 		movsd	64(%esp), %xmm7	# %sfp, up
+ 929      2440
+ 930 09de F20F117C 		movsd	%xmm7, 4(%esp)	# up,
+ 930      2404
+ 931 09e4 8D930000 		leal	.LC6@GOTOFF(%ebx), %edx	#, tmp320
+ 931      0000
+ 932 09ea 899424C8 		movl	%edx, 200(%esp)	# tmp320, %sfp
+ 932      000000
+ 933 09f1 891424   		movl	%edx, (%esp)	# tmp320,
+ 934 09f4 E8FCFFFF 		call	printf@PLT	#
+ 934      FF
+ 935              	.LVL108:
+ 936 09f9 DD442440 		fldl	64(%esp)	# %sfp
+ 937 09fd DB7C2450 		fstpt	80(%esp)	# %sfp
+ 938              	.LVL109:
+ 939 0a01 C744240C 		movl	$1466461315, 12(%esp)	#,
+ 939      836C6857 
+ 940 0a09 C7442410 		movl	$-1053220357, 16(%esp)	#,
+ 940      FB2139C1 
+ 941 0a11 F20F107C 		movsd	64(%esp), %xmm7	# %sfp, up
+ 941      2440
+ 942 0a17 F20F117C 		movsd	%xmm7, 4(%esp)	# up,
+ 942      2404
+ 943 0a1d 8DBB0000 		leal	.LC7@GOTOFF(%ebx), %edi	#, tmp322
+ 943      0000
+ 944 0a23 89BC24CC 		movl	%edi, 204(%esp)	# tmp322, %sfp
+ 944      000000
+ 945 0a2a 893C24   		movl	%edi, (%esp)	# tmp322,
+ 946 0a2d E8FCFFFF 		call	printf@PLT	#
+ 946      FF
+ 947              	.LVL110:
+ 948 0a32 DB6C2470 		fldt	112(%esp)	# %sfp
+ 949 0a36 DB6C2450 		fldt	80(%esp)	# %sfp
+ 950 0a3a DCE9     		fsubr	%st, %st(1)	#,
+ 951 0a3c DEC1     		faddp	%st, %st(1)	#,
+ 952 0a3e DD9C24E8 		fstpl	232(%esp)	#
+ 952      000000
+ 953 0a45 DD8424E8 		fldl	232(%esp)	#
+ 953      000000
+ 954 0a4c DBBC2490 		fstpt	144(%esp)	# %sfp
+ 954      000000
+ 955              	.LVL111:
+ 956 0a53 C744240C 		movl	$1466461315, 12(%esp)	#,
+ 956      836C6857 
+ 957 0a5b C7442410 		movl	$-1053220357, 16(%esp)	#,
+ 957      FB2139C1 
+ 958 0a63 F20F107C 		movsd	64(%esp), %xmm7	# %sfp, up
+ 958      2440
+ 959 0a69 F20F117C 		movsd	%xmm7, 4(%esp)	# up,
+ 959      2404
+ 960 0a6f 8DBB0000 		leal	.LC8@GOTOFF(%ebx), %edi	#, tmp327
+ 960      0000
+ 961 0a75 89BC24D0 		movl	%edi, 208(%esp)	# tmp327, %sfp
+ 961      000000
+ 962 0a7c 893C24   		movl	%edi, (%esp)	# tmp327,
+ 963 0a7f E8FCFFFF 		call	printf@PLT	#
+ 963      FF
+ 964              	.LVL112:
+ 965 0a84 DB6C2470 		fldt	112(%esp)	# %sfp
+ 966 0a88 D9C0     		fld	%st(0)	#
+ 967 0a8a DC8B0000 		fmull	.LC17@GOTOFF(%ebx)	#
+ 967      0000
+ 968 0a90 DD9C2488 		fstpl	136(%esp)	# %sfp
+ 968      000000
+ 969              	.LVL113:
+ 970 0a97 DD842488 		fldl	136(%esp)	# %sfp
+ 970      000000
+ 971 0a9e DBAC2490 		fldt	144(%esp)	# %sfp
+ 971      000000
+ 972 0aa5 DCEA     		fsubr	%st, %st(2)	#,
+ 973 0aa7 D9CA     		fxch	%st(2)	#
+ 974 0aa9 DD9C24E8 		fstpl	232(%esp)	#
+ 974      000000
+ 975 0ab0 DD8424E8 		fldl	232(%esp)	#
+ 975      000000
+ 976 0ab7 DD830000 		fldl	.LC26@GOTOFF(%ebx)	#
+ 976      0000
+ 977 0abd D9C3     		fld	%st(3)	#
+ 978 0abf D8C9     		fmul	%st(1), %st	#,
+ 979 0ac1 D9CB     		fxch	%st(3)	#
+ 980 0ac3 D9C0     		fld	%st(0)	#
+ 981 0ac5 DBBC24A0 		fstpt	160(%esp)	# %sfp
+ 981      000000
+ 982 0acc DEEB     		fsubrp	%st, %st(3)	#,
+ 983 0ace D9830000 		flds	.LC27@GOTOFF(%ebx)	#
+ 983      0000
+ 984 0ad4 DCCC     		fmul	%st, %st(4)	#,
+ 985 0ad6 D9CB     		fxch	%st(3)	#
+ 986 0ad8 DEC4     		faddp	%st, %st(4)	#,
+ 987 0ada D8C9     		fmul	%st(1), %st	#,
+ 988 0adc DEC3     		faddp	%st, %st(3)	#,
+ 989 0ade D9C0     		fld	%st(0)	#
+ 990 0ae0 DBBC24B0 		fstpt	176(%esp)	# %sfp
+ 990      000000
+ 991 0ae7 DEC9     		fmulp	%st, %st(1)	#,
+ 992 0ae9 DEC1     		faddp	%st, %st(1)	#,
+ 993 0aeb DD5C2450 		fstpl	80(%esp)	# %sfp
+ 994              	.LVL114:
+ 995 0aef F20F1054 		movsd	80(%esp), %xmm2	# %sfp, kch_l.20
+ 995      2450
+ 996 0af5 F20F1154 		movsd	%xmm2, 12(%esp)	# kch_l.20,
+ 996      240C
+ 997 0afb F20F10A4 		movsd	136(%esp), %xmm4	# %sfp, kch_h.19
+ 997      24880000 
+ 997      00
+ 998 0b04 F20F1164 		movsd	%xmm4, 4(%esp)	# kch_h.19,
+ 998      2404
+ 999 0b0a 8D8B0000 		leal	.LC9@GOTOFF(%ebx), %ecx	#, tmp349
+ 999      0000
+ 1000 0b10 898C24D4 		movl	%ecx, 212(%esp)	# tmp349, %sfp
+ 1000      000000
+ 1001 0b17 890C24   		movl	%ecx, (%esp)	# tmp349,
+ 1002 0b1a E8FCFFFF 		call	printf@PLT	#
+ 1002      FF
+ 1003              	.LVL115:
+ 1004 0b1f F20F1054 		movsd	80(%esp), %xmm2	# %sfp, kch_l.20
+ 1004      2450
+ 1005 0b25 F20F1154 		movsd	%xmm2, 4(%esp)	# kch_l.20,
+ 1005      2404
+ 1006 0b2b 8D930000 		leal	.LC10@GOTOFF(%ebx), %edx	#, tmp350
+ 1006      0000
+ 1007 0b31 899424D8 		movl	%edx, 216(%esp)	# tmp350, %sfp
+ 1007      000000
+ 1008 0b38 891424   		movl	%edx, (%esp)	# tmp350,
+ 1009 0b3b E8FCFFFF 		call	printf@PLT	#
+ 1009      FF
+ 1010              	.LVL116:
+ 1011              	.LBE14:

@@ -1,0 +1,66 @@
+ 172:trigo_fast.c  ****       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+ 689              		.loc 1 172 0
+ 690 056b DD442430 		fldl	48(%esp)	# %sfp
+ 691              	.LVL95:
+ 692 056f D9C0     		fld	%st(0)	#
+ 693 0571 DC8B0000 		fmull	.LC1@GOTOFF(%ebx)	#
+ 693      0000
+ 694              	.LVL96:
+ 695 0577 DD9C24C8 		fstpl	200(%esp)	#
+ 695      000000
+ 696              	.LVL97:
+ 697 057e DD8424C8 		fldl	200(%esp)	#
+ 697      000000
+ 698              	.LVL98:
+ 699 0585 D9C1     		fld	%st(1)	#
+ 700              	.LVL99:
+ 701 0587 D8E1     		fsub	%st(1), %st	#,
+ 702 0589 DEC1     		faddp	%st, %st(1)	#,
+ 703 058b DD9C24C8 		fstpl	200(%esp)	#
+ 703      000000
+ 704              	.LVL100:
+ 705 0592 DD8424C8 		fldl	200(%esp)	#
+ 705      000000
+ 706              	.LVL101:
+ 707 0599 D9C1     		fld	%st(1)	#
+ 708              	.LVL102:
+ 709 059b DC8B0000 		fmull	.LC9@GOTOFF(%ebx)	#
+ 709      0000
+ 710 05a1 DD5C2458 		fstpl	88(%esp)	# %sfp
+ 711              	.LVL103:
+ 712 05a5 DD442458 		fldl	88(%esp)	# %sfp
+ 713 05a9 D9CA     		fxch	%st(2)	#
+ 714 05ab D9C0     		fld	%st(0)	#
+ 715 05ad DB7C2460 		fstpt	96(%esp)	# %sfp
+ 716 05b1 D8E1     		fsub	%st(1), %st	#,
+ 717 05b3 DD9C24C8 		fstpl	200(%esp)	#
+ 717      000000
+ 718 05ba DD8424C8 		fldl	200(%esp)	#
+ 718      000000
+ 719 05c1 DD830000 		fldl	.LC17@GOTOFF(%ebx)	#
+ 719      0000
+ 720 05c7 D9C2     		fld	%st(2)	#
+ 721 05c9 D8C9     		fmul	%st(1), %st	#,
+ 722 05cb D9CC     		fxch	%st(4)	#
+ 723 05cd D9C0     		fld	%st(0)	#
+ 724 05cf DBBC2480 		fstpt	128(%esp)	# %sfp
+ 724      000000
+ 725 05d6 DEEC     		fsubrp	%st, %st(4)	#,
+ 726 05d8 D9830000 		flds	.LC18@GOTOFF(%ebx)	#
+ 726      0000
+ 727 05de D9CB     		fxch	%st(3)	#
+ 728 05e0 D9C0     		fld	%st(0)	#
+ 729 05e2 DB7C2470 		fstpt	112(%esp)	# %sfp
+ 730 05e6 D8CB     		fmul	%st(3), %st	#,
+ 731 05e8 DEC4     		faddp	%st, %st(4)	#,
+ 732 05ea D8C9     		fmul	%st(1), %st	#,
+ 733 05ec DEC3     		faddp	%st, %st(3)	#,
+ 734 05ee D9C0     		fld	%st(0)	#
+ 735 05f0 DBBC2490 		fstpt	144(%esp)	# %sfp
+ 735      000000
+ 736 05f7 DEC9     		fmulp	%st, %st(1)	#,
+ 737 05f9 DEC1     		faddp	%st, %st(1)	#,
+ 738 05fb DD9C24B0 		fstpl	176(%esp)	# %sfp
+ 738      000000
+ 739              	.LVL104:
+ 740              	.LBE16:

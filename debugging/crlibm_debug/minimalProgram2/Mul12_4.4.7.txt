@@ -1,0 +1,160 @@
+ 808              		.loc 1 172 0
+ 809 0634 8D830000 		leal	.LC1@GOTOFF(%ebx), %eax	#,
+ 809      0000
+ 810 063a 8985F0FD 		movl	%eax, -528(%ebp)	#, %sfp
+ 810      FFFF
+ 811 0640 890424   		movl	%eax, (%esp)	#,
+ 812 0643 E8FCFFFF 		call	puts@PLT	#
+ 812      FF
+ 813 0648 8D830000 		leal	.LC2@GOTOFF(%ebx), %eax	#,
+ 813      0000
+ 814 064e 8985F4FD 		movl	%eax, -524(%ebp)	#, %sfp
+ 814      FFFF
+ 815 0654 C744241C 		movl	$1413754136, 28(%esp)	#,
+ 815      182D4454 
+ 816 065c C7442420 		movl	$-1081531909, 32(%esp)	#,
+ 816      FB2189BF 
+ 817 0664 DD8550FE 		fldl	-432(%ebp)	# %sfp
+ 817      FFFF
+ 818 066a DD5C2414 		fstpl	20(%esp)	#
+ 819 066e D9EE     		fldz
+ 820 0670 DD54240C 		fstl	12(%esp)	#
+ 821 0674 DD5C2404 		fstpl	4(%esp)	#
+ 822 0678 890424   		movl	%eax, (%esp)	#,
+ 823 067b E8FCFFFF 		call	printf@PLT	#
+ 823      FF
+ 824              	.LVL99:
+ 825 0680 8D830000 		leal	.LC3@GOTOFF(%ebx), %eax	#,
+ 825      0000
+ 826 0686 8985F8FD 		movl	%eax, -520(%ebp)	#, %sfp
+ 826      FFFF
+ 827 068c C744240C 		movl	$1413754136, 12(%esp)	#,
+ 827      182D4454 
+ 828 0694 C7442410 		movl	$-1081531909, 16(%esp)	#,
+ 828      FB2189BF 
+ 829 069c DD8550FE 		fldl	-432(%ebp)	# %sfp
+ 829      FFFF
+ 830 06a2 DD5C2404 		fstpl	4(%esp)	#
+ 831 06a6 890424   		movl	%eax, (%esp)	#,
+ 832 06a9 E8FCFFFF 		call	printf@PLT	#
+ 832      FF
+ 833 06ae DD8550FE 		fldl	-432(%ebp)	# %sfp
+ 833      FFFF
+ 834 06b4 DC8B0000 		fmull	.LC4@GOTOFF(%ebx)	#
+ 834      0000
+ 835 06ba DD9538FE 		fstl	-456(%ebp)	# %sfp
+ 835      FFFF
+ 836              	.LVL100:
+ 837 06c0 8D830000 		leal	.LC5@GOTOFF(%ebx), %eax	#,
+ 837      0000
+ 838 06c6 8985FCFD 		movl	%eax, -516(%ebp)	#, %sfp
+ 838      FFFF
+ 839 06cc C744240C 		movl	$1466461315, 12(%esp)	#,
+ 839      836C6857 
+ 840 06d4 C7442410 		movl	$-1053220357, 16(%esp)	#,
+ 840      FB2139C1 
+ 841 06dc DD5C2404 		fstpl	4(%esp)	#
+ 842 06e0 890424   		movl	%eax, (%esp)	#,
+ 843 06e3 E8FCFFFF 		call	printf@PLT	#
+ 843      FF
+ 844              	.LVL101:
+ 845 06e8 DD8550FE 		fldl	-432(%ebp)	# %sfp
+ 845      FFFF
+ 846 06ee DCA538FE 		fsubl	-456(%ebp)	# %sfp
+ 846      FFFF
+ 847 06f4 DC8538FE 		faddl	-456(%ebp)	# %sfp
+ 847      FFFF
+ 848 06fa DD9D20FE 		fstpl	-480(%ebp)	# %sfp
+ 848      FFFF
+ 849              	.LVL102:
+ 850 0700 8D830000 		leal	.LC6@GOTOFF(%ebx), %eax	#,
+ 850      0000
+ 851 0706 898500FE 		movl	%eax, -512(%ebp)	#, %sfp
+ 851      FFFF
+ 852 070c C744240C 		movl	$1466461315, 12(%esp)	#,
+ 852      836C6857 
+ 853 0714 C7442410 		movl	$-1053220357, 16(%esp)	#,
+ 853      FB2139C1 
+ 854 071c DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 854      FFFF
+ 855              	.LVL103:
+ 856 0722 DD5C2404 		fstpl	4(%esp)	#
+ 857 0726 890424   		movl	%eax, (%esp)	#,
+ 858 0729 E8FCFFFF 		call	printf@PLT	#
+ 858      FF
+ 859 072e DD8550FE 		fldl	-432(%ebp)	# %sfp
+ 859      FFFF
+ 860 0734 DCA520FE 		fsubl	-480(%ebp)	# %sfp
+ 860      FFFF
+ 861 073a DD9D10FE 		fstpl	-496(%ebp)	# %sfp
+ 861      FFFF
+ 862              	.LVL104:
+ 863 0740 8D830000 		leal	.LC7@GOTOFF(%ebx), %eax	#,
+ 863      0000
+ 864 0746 898504FE 		movl	%eax, -508(%ebp)	#, %sfp
+ 864      FFFF
+ 865 074c C744240C 		movl	$1466461315, 12(%esp)	#,
+ 865      836C6857 
+ 866 0754 C7442410 		movl	$-1053220357, 16(%esp)	#,
+ 866      FB2139C1 
+ 867 075c DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 867      FFFF
+ 868              	.LVL105:
+ 869 0762 DD5C2404 		fstpl	4(%esp)	#
+ 870 0766 890424   		movl	%eax, (%esp)	#,
+ 871 0769 E8FCFFFF 		call	printf@PLT	#
+ 871      FF
+ 872 076e 8D830000 		leal	.LC17@GOTOFF(%ebx), %eax	#,
+ 872      0000
+ 873 0774 DD00     		fldl	(%eax)	#
+ 874 0776 DC8D50FE 		fmull	-432(%ebp)	# %sfp
+ 874      FFFF
+ 875 077c DD9518FE 		fstl	-488(%ebp)	# %sfp
+ 875      FFFF
+ 876              	.LVL106:
+ 877 0782 DD830000 		fldl	.LC25@GOTOFF(%ebx)	#
+ 877      0000
+ 878              	.LVL107:
+ 879 0788 DD8520FE 		fldl	-480(%ebp)	# %sfp
+ 879      FFFF
+ 880 078e D8C9     		fmul	%st(1), %st	#,
+ 881 0790 DEE2     		fsubp	%st, %st(2)	#,
+ 882 0792 D9830000 		flds	.LC26@GOTOFF(%ebx)	#
+ 882      0000
+ 883 0798 DD8520FE 		fldl	-480(%ebp)	# %sfp
+ 883      FFFF
+ 884 079e D8C9     		fmul	%st(1), %st	#,
+ 885 07a0 DEC3     		faddp	%st, %st(3)	#,
+ 886 07a2 D9C9     		fxch	%st(1)	#
+ 887 07a4 DC8D10FE 		fmull	-496(%ebp)	# %sfp
+ 887      FFFF
+ 888 07aa DEC2     		faddp	%st, %st(2)	#,
+ 889 07ac DC8D10FE 		fmull	-496(%ebp)	# %sfp
+ 889      FFFF
+ 890 07b2 DEC1     		faddp	%st, %st(1)	#,
+ 891 07b4 DD9528FE 		fstl	-472(%ebp)	# %sfp
+ 891      FFFF
+ 892              	.LVL108:
+ 893 07ba 8D830000 		leal	.LC8@GOTOFF(%ebx), %eax	#,
+ 893      0000
+ 894 07c0 898508FE 		movl	%eax, -504(%ebp)	#, %sfp
+ 894      FFFF
+ 895 07c6 DD5C240C 		fstpl	12(%esp)	#
+ 896 07ca DD8518FE 		fldl	-488(%ebp)	# %sfp
+ 896      FFFF
+ 897              	.LVL109:
+ 898 07d0 DD5C2404 		fstpl	4(%esp)	#
+ 899 07d4 890424   		movl	%eax, (%esp)	#,
+ 900 07d7 E8FCFFFF 		call	printf@PLT	#
+ 900      FF
+ 901 07dc 8D830000 		leal	.LC9@GOTOFF(%ebx), %eax	#,
+ 901      0000
+ 902 07e2 89850CFE 		movl	%eax, -500(%ebp)	#, %sfp
+ 902      FFFF
+ 903 07e8 DD8528FE 		fldl	-472(%ebp)	# %sfp
+ 903      FFFF
+ 904 07ee DD5C2404 		fstpl	4(%esp)	#
+ 905 07f2 890424   		movl	%eax, (%esp)	#,
+ 906 07f5 E8FCFFFF 		call	printf@PLT	#
+ 906      FF
+ 907              	.LBE38:

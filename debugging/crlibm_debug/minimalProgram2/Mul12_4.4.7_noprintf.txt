@@ -1,0 +1,55 @@
+ 172:trigo_fast.c  ****       Mul12(&kch_h, &kch_l,   kd, RR_DD_MCH);
+ 635              		.loc 1 172 0
+ 636 0419 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 636      FFFF
+ 637 041f DC8B0000 		fmull	.LC1@GOTOFF(%ebx)	#
+ 637      0000
+ 638              	.LVL77:
+ 639 0425 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 639      FFFF
+ 640              	.LVL78:
+ 641 042b D8E1     		fsub	%st(1), %st	#,
+ 642 042d DEC1     		faddp	%st, %st(1)	#,
+ 643 042f DD9530FE 		fstl	-464(%ebp)	# %sfp
+ 643      FFFF
+ 644              	.LVL79:
+ 645 0435 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 645      FFFF
+ 646              	.LVL80:
+ 647 043b DEE1     		fsubp	%st, %st(1)	#,
+ 648 043d DD9D18FE 		fstpl	-488(%ebp)	# %sfp
+ 648      FFFF
+ 649              	.LVL81:
+ 650 0443 DD8538FE 		fldl	-456(%ebp)	# %sfp
+ 650      FFFF
+ 651 0449 DC8B0000 		fmull	.LC9@GOTOFF(%ebx)	#
+ 651      0000
+ 652 044f DD9D20FE 		fstpl	-480(%ebp)	# %sfp
+ 652      FFFF
+ 653              	.LVL82:
+ 654 0455 DD830000 		fldl	.LC16@GOTOFF(%ebx)	#
+ 654      0000
+ 655              	.LVL83:
+ 656 045b DD8530FE 		fldl	-464(%ebp)	# %sfp
+ 656      FFFF
+ 657 0461 D8C9     		fmul	%st(1), %st	#,
+ 658 0463 DCA520FE 		fsubl	-480(%ebp)	# %sfp
+ 658      FFFF
+ 659 0469 D9830000 		flds	.LC17@GOTOFF(%ebx)	#
+ 659      0000
+ 660 046f DD8530FE 		fldl	-464(%ebp)	# %sfp
+ 660      FFFF
+ 661 0475 D8C9     		fmul	%st(1), %st	#,
+ 662 0477 DEC2     		faddp	%st, %st(2)	#,
+ 663 0479 D9CA     		fxch	%st(2)	#
+ 664 047b DC8D18FE 		fmull	-488(%ebp)	# %sfp
+ 664      FFFF
+ 665 0481 DEC1     		faddp	%st, %st(1)	#,
+ 666 0483 D9C9     		fxch	%st(1)	#
+ 667 0485 DC8D18FE 		fmull	-488(%ebp)	# %sfp
+ 667      FFFF
+ 668 048b DEC1     		faddp	%st, %st(1)	#,
+ 669 048d DD9528FE 		fstl	-472(%ebp)	# %sfp
+ 669      FFFF
+ 670              	.LVL84:
+ 671              	.LBE32:
