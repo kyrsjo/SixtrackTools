@@ -1,0 +1,7 @@
+#Editor backup files
+*~
+
+#Ignore object files
+*.[oa]
+
+#Ignore output files
