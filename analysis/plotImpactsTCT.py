@@ -58,7 +58,7 @@ for col in colls_ID:
     xp = np.asarray(xp)
     y = np.asarray(y)
     yp = np.asarray(yp)
-
+    print "Events:", len(s)
     
     #plt.figure(1)
     #plt.title("CollID = "+str(col)+" ( "+colls_name[ID]+" ) nHits= "+str(len(s)))
@@ -93,6 +93,8 @@ for col in colls_ID:
         plt.figure()
         plt.title("CollID = "+str(col)+" ( "+colls_name[col]+" ) nHits= "+str(len(s)))
         pylab.hist2d(x,xp,nBins2D,norm=mpl.colors.LogNorm())
+        plt.axvline( colls_halfgap[col]*1e3,ls="--",color='k')
+        plt.axvline(-colls_halfgap[col]*1e3,ls="--",color='k')
         plt.colorbar()
         plt.xlabel("x [mm]")
         plt.ylabel("xp")
@@ -101,13 +103,23 @@ for col in colls_ID:
         plt.figure()
         plt.title("CollID = "+str(col)+" ( "+colls_name[col]+" ) nHits= "+str(len(s)))
         plt.scatter(s,x)
+        plt.axhline( colls_halfgap[col]*1e3,ls="--",color='k')
+        plt.axhline(-colls_halfgap[col]*1e3,ls="--",color='k')
         plt.xlabel("s [m]")
         plt.ylabel("x [mm]")
         plt.savefig("plotImpactsTCT_"+colls_name[col]+"_s-x.png",dpi=120)
+        ylim = plt.ylim()
+        plt.ylim(colls_halfgap[col]*1e3-1e-3,colls_halfgap[col]*1e3+5e-3)
+        plt.savefig("plotImpactsTCT_"+colls_name[col]+"_s-y_upper.png",dpi=120)
+        plt.ylim(-colls_halfgap[col]*1e3-5e-3,-colls_halfgap[col]*1e3+1e-3)
+        plt.savefig("plotImpactsTCT_"+colls_name[col]+"_s-y_lower.png",dpi=120)
+        plt.ylim(ylim)
 
         plt.figure()
         plt.title("CollID = "+str(col)+" ( "+colls_name[col]+" ) nHits= "+str(len(s)))
         pylab.hist2d(s,x,nBins2D,norm=mpl.colors.LogNorm())
+        plt.axhline( colls_halfgap[col]*1e3,ls="--",color='k')
+        plt.axhline(-colls_halfgap[col]*1e3,ls="--",color='k')
         plt.colorbar()
         plt.xlabel("s [m]")
         plt.ylabel("x [mm]")
@@ -120,7 +132,12 @@ for col in colls_ID:
         #print min(depth), max(depth)
         if min(depth) < 0.0:
             print "WARNING, hits outside collimator jaw!"
-        plt.xlabel("Impact depth [m]")
+            print "  min(depth) =", min(depth)
+            print "  num < 0.0 =", (depth < 0.0).sum()
+            print "  Values: [mm]"
+            print "  ", depth[depth < 0.0]
+            print "  Mean=", np.mean(depth[depth < 0.0])
+        plt.xlabel("Impact depth [mm]")
         plt.yscale('log', nonposy='clip')
         plt.savefig("plotImpactsTCT_"+colls_name[col]+"_depth.png",dpi=120)
         
@@ -146,20 +163,32 @@ for col in colls_ID:
         plt.title("CollID = "+str(col)+" ( "+colls_name[col]+" ) nHits= "+str(len(s)))
         pylab.hist2d(y,yp,nBins2D,norm=mpl.colors.LogNorm())
         plt.colorbar()
-        plt.xlabel("y")
+        plt.axvline( colls_halfgap[col]*1e3,ls="--",color='k')
+        plt.axvline(-colls_halfgap[col]*1e3,ls="--",color='k')
+        plt.xlabel("y [mm]")
         plt.ylabel("yp")
         plt.savefig("plotImpactsTCT_"+colls_name[col]+"_y-yp.png",dpi=120)
         
         plt.figure()
         plt.title("CollID = "+str(col)+" ( "+colls_name[col]+" ) nHits= "+str(len(s)))
         plt.scatter(s,y)
-        plt.xlabel("s")
-        plt.ylabel("y")
+        plt.axhline( colls_halfgap[col]*1e3,ls="--",color='k')
+        plt.axhline(-colls_halfgap[col]*1e3,ls="--",color='k')
+        plt.xlabel("s [mm]")
+        plt.ylabel("y [m]")
         plt.savefig("plotImpactsTCT_"+colls_name[col]+"_s-y.png",dpi=120)
+        ylim = plt.ylim()
+        plt.ylim(colls_halfgap[col]*1e3-1e-3,colls_halfgap[col]*1e3+5e-3)
+        plt.savefig("plotImpactsTCT_"+colls_name[col]+"_s-y_upper.png",dpi=120)
+        plt.ylim(-colls_halfgap[col]*1e3-5e-3,-colls_halfgap[col]*1e3+1e-3)
+        plt.savefig("plotImpactsTCT_"+colls_name[col]+"_s-y_lower.png",dpi=120)
+        plt.ylim(ylim)
         
         plt.figure()
         plt.title("CollID = "+str(col)+" ( "+colls_name[col]+" ) nHits= "+str(len(s)))
         pylab.hist2d(s,y,nBins2D,norm=mpl.colors.LogNorm())
+        plt.axhline( colls_halfgap[col]*1e3,ls="--",color='k')
+        plt.axhline(-colls_halfgap[col]*1e3,ls="--",color='k')
         plt.colorbar()
         plt.xlabel("s")
         plt.ylabel("y")
@@ -173,8 +202,9 @@ for col in colls_ID:
             print "WARNING, hits outside collimator jaw!"
             print "  min(depth) =", min(depth)
             print "  num < 0.0 =", (depth < 0.0).sum()
-            print "  Values:"
+            print "  Values: [mm]"
             print "  ", depth[depth < 0.0]
+            print "  Mean=", np.mean(depth[depth < 0.0])
         plt.xlabel("Impact depth [mm]")
         plt.yscale('log', nonposy='clip')
         plt.savefig("plotImpactsTCT_"+colls_name[col]+"_depth.png",dpi=120)
