@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 #plotType = None
 #plotType="IPACsingleCol_crabVoltage"
 plotType="IPACsingleCol_crabFail2"
+#plotType="manual_crabfail"
 
 if plotType=="IPACsingleCol_crabVoltage":
     textwidth = 3.25 #inches, for 2Dpic paper
@@ -28,11 +29,12 @@ elif plotType=="IPACsingleCol_crabFail1":
     (fig_fail, axes_fail) = plt.subplots(nrows=2, ncols=1,figsize=(textwidth,textwidth/1.618*2), sharex=True, sharey=False, num=1000,dpi=DPI)
 
 elif plotType=="IPACsingleCol_crabFail2":
-    textwidth = 3.25 #inches, for 2Dpic paper
+#    textwidth = 3.25 #inches, for 2Dpic paper
+    textwidth = 483.69684/72.27
     
     from matplotlib import rcParams,rc
 #    rcParams.update({'text.usetex': True}) #slow
-    DPI = 300
+    DPI = 100
     rc('font',**{'family':'serif','serif':['Times'],'size':10})
     rcParams['figure.figsize'] = textwidth, textwidth/1.618
     
@@ -40,7 +42,15 @@ elif plotType=="IPACsingleCol_crabFail2":
     turn_phase = None
     volt_volt = None
     phase_phase = None
-    
+
+elif plotType=="manual_crabfail":
+    textwidth = 483.69684/72.27
+    from matplotlib import rcParams,rc
+#    rcParams.update({'text.usetex': True}) #slow
+    DPI = 300
+    rc('font',**{'family':'serif','serif':['Times'],'size':10})
+    rcParams['figure.figsize'] = textwidth, textwidth/1.618
+
 
 class DYNKdata:
     #Data for one (element,attribute)
@@ -158,9 +168,11 @@ for (k,i) in zip(dynkData,xrange(len(dynkData))):
     plt.figure(1)
     if plotType == "IPACsingleCol_crabVoltage":
         plotLabel = "%s"%(k[0])
+        plt.plot(dynkData[k].turn,dynkData[k].data[:,0], label=plotLabel[-2:] )
     else:
         plotLabel = "%s:%s"%(k[0],k[1])
-    plt.plot(dynkData[k].turn,dynkData[k].data[:,0], label=plotLabel[-2:] )
+        print plotLabel
+        plt.plot(dynkData[k].turn,dynkData[k].data[:,0], label=plotLabel )
     #plt.xticks(np.arange(dynkData[k].turn[0], dynkData[k].turn[-1], 1.0))
 
 #Final touches
@@ -211,5 +223,6 @@ elif plotType=="IPACsingleCol_crabFail2":
     plt.subplots_adjust(left=0.15,bottom=0.175, right=0.83,top=0.96)
     
     plt.savefig("fail_voltagePhase2.png",dpi=DPI)
+    plt.savefig("fail_voltagePhase2.eps")
 
 plt.show()
