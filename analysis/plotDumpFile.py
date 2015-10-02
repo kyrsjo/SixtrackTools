@@ -11,7 +11,8 @@ S = 20 #marker size for scatter plots
 LW = None #line width for scatter plots
 DPI = None
 # Produce specific publication plots:
-plotType="IPACsingleCol_1"
+#plotType="IPACsingleCol_1"
+plotType=None
 
 if plotType=="IPACsingleCol_1":
     textwidth = 3.25 #inches, for 2Dpic paper
@@ -193,6 +194,8 @@ corrX = []
 corrY = []
 angX = []
 angY = []
+meanX = []
+meanY = []
 X = []
 XP = []
 Y = []
@@ -220,6 +223,9 @@ while True:
     
     angX.append( np.arctan(np.polyfit(tdata['z'], tdata['x'],1)[0]) )
     angY.append( np.arctan(np.polyfit(tdata['z'], tdata['y'],1)[0]) )
+    
+    meanX.append( np.mean(tdata['x']) )
+    meanY.append( np.mean(tdata['y']) )
     
     for p in tdata:
         if p['ID'] == 1:
@@ -413,6 +419,15 @@ plt.figure(8)
 plt.plot(map(lambda x: x*1e6,angY))
 plt.xlabel("Turn")
 plt.ylabel(r"Angle (y) [$\mu$rad]")
+
+plt.figure()
+plt.plot(meanX)
+plt.xlabel("Turn")
+plt.ylabel("Mean (x)")
+plt.figure()
+plt.plot(meanY)
+plt.xlabel("Turn")
+plt.ylabel("Mean (y)")
 
 (f,ax) = plt.subplots(2,2)
 
