@@ -18,7 +18,7 @@ LOSSTURN = []
 for directory in os.walk("."):
     thisDir = directory[0]
     print thisDir
-    if thisDir == ".":
+    if thisDir == "." or thisDir == "./pngs":
         continue
     freq = thisDir.split("_")[1]
     if int(freq) > maxF:

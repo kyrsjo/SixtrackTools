@@ -14,6 +14,13 @@ DPI = None
 #plotType="IPACsingleCol_1"
 plotType=None
 
+#Courant-Snyder parameters, for CS invariant
+
+betaCS_y  = 0.15 #[m]
+alphaCS_y = 0.0  #[rad]
+gammaCS_y = 1/betaCS_y #[1/m]
+meanP_y = 0.295e-3
+
 if plotType=="IPACsingleCol_1":
     textwidth = 3.25 #inches, for 2Dpic paper
     DPI = 300
@@ -196,6 +203,7 @@ angX = []
 angY = []
 meanX = []
 meanY = []
+mean_CSinv_y = []
 X = []
 XP = []
 Y = []
@@ -227,6 +235,10 @@ while True:
     meanX.append( np.mean(tdata['x']) )
     meanY.append( np.mean(tdata['y']) )
     
+    CSinv_y = (tdata['y']/1e3)**2*gammaCS_y + 2*alphaCS_y*(tdata['y']/1e3-meanP_y)*(tdata['yp']/1e3) + betaCS_y*(tdata['yp']/1e3-meanP_y)**2 #[m]
+    mean_CSinv_y.append(np.mean(CSinv_y))
+    print "First turn distribution of CSinv_y; mean=%g, rms=%g" %(np.mean(CSinv_y),np.std(CSinv_y))
+    
     for p in tdata:
         if p['ID'] == 1:
             X.append(  p['x']  )
@@ -245,7 +257,7 @@ while True:
 #            plt.hist(tdata[v])
 #            plt.xlabel(v)
 #            plt.title("First turn distribution; mean=%f, rms=%f" % (np.mean(tdata[v]), np.std(tdata[v])))
-            print "First turn distribution of %s; N=%i, mean=%f, rms=%f" % (v,len(tdata), np.mean(tdata[v]), np.std(tdata[v]))
+            print "First turn distribution of %s; N=%i, mean=%g, rms=%g" % (v,len(tdata), np.mean(tdata[v]), np.std(tdata[v]))
 
     #Check if ID is "unbroken" or not
     if len(tdata) != 64:
@@ -358,20 +370,47 @@ while True:
     
     plt.savefig("pngs/zdEE_%05i.png" % (t))
 
-    continue
+    plt.clf()
+    plt.title("TURN =" + str(t))
+    plt.hist(CSinv_y*1e6,50,range=(0,0.05))
+    plt.xlabel("Courant-Snyder invariant (y) [mm*mrad]")
+    plt.savefig("pngs/CSinv_%05i.png" % (t))
+
+    #plt.show()
+
+    # continue
+
+    # fig = plt.figure(10)
+    # ax = fig.add_subplot(111, projection='3d')
+    # ax.scatter(tdata['x'], tdata['y'], tdata['z'])
+    # ax.set_xlim(-0.05,0.05)
+    # ax.set_ylim(-0.25,0.25)
+    # ax.set_zlim(-200,200)
+    # ax.set_title("TURN =" + str(t))
+    # plt.xlabel("x [mm]")
+    # plt.ylabel("y [mm]")
+    # ax.set_zlabel("z [mm]")
+    
+    # plt.savefig("pngs/xyz_%05i.png" % (t))
 
     fig = plt.figure(10)
     ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(tdata['x'], tdata['y'], tdata['z'])
-    ax.set_xlim(-0.05,0.05)
-    ax.set_ylim(-0.25,0.25)
-    ax.set_zlim(-200,200)
+
+    #ax.scatter(tdata['y'], tdata['yp'], tdata['z'],zorder=0)
+    ax.scatter(tdata['y'], tdata['yp'], zdir='z',zs=min(fdata[:]['z']),zorder=1, c=tdata['ID'],cmap="rainbow")
+    ax.scatter(tdata['y'], tdata['z'], zdir='y',zs=max(fdata[:]['yp']),zorder=1, c=tdata['ID'],cmap="rainbow")
+    ax.scatter(tdata['yp'], tdata['z'], zdir='x',zs=min(fdata[:]['y']),zorder=1, c=tdata['ID'],cmap="rainbow")
+
+    ax.set_xlim(min(fdata[:]['y']),max(fdata[:]['y']))
+    ax.set_ylim(min(fdata[:]['yp']),max(fdata[:]['yp']))
+    ax.set_zlim(min(fdata[:]['z']),max(fdata[:]['z']))
     ax.set_title("TURN =" + str(t))
-    plt.xlabel("x [mm]")
-    plt.ylabel("y [mm]")
+    plt.xlabel("y [mm]")
+    plt.ylabel("yp [mrad]")
     ax.set_zlabel("z [mm]")
     
-    plt.savefig("pngs/xyz_%05i.png" % (t))
+    plt.savefig("pngs/yypz_%05i.png" % (t))
+    #plt.show()
 
 fps = 10
 
@@ -428,6 +467,11 @@ plt.figure()
 plt.plot(meanY)
 plt.xlabel("Turn")
 plt.ylabel("Mean (y)")
+
+plt.figure()
+plt.plot(np.asarray(mean_CSinv_y)*1e6)
+plt.xlabel("Turn")
+plt.ylabel("Mean CS invariant [mm*mrad]")
 
 (f,ax) = plt.subplots(2,2)
 
