@@ -16,10 +16,12 @@ IPnom = ("IP1", "IP2", "IP3", "IP4", "IP5", "IP6", "IP7", "IP8", "IP1")
 #Read aperture loss data
 fileDType=np.dtype([("name",np.int),("turn",np.int),("s",np.float),("x",np.float),("xp",np.float),("y",np.float),("yp",np.float),("dEE",np.float),("type",np.int),("turnsImpact",np.int)])
 aperLoss = np.loadtxt("LPI.s",dtype=fileDType)
+lastTurn = max(aperLoss["turn"])
 
 #Read collimator loss data
 nhits_coll = {}
 pos_coll = {}
+nhitsTurn_coll = {}
 print "Loading 'CollPositions.b1.dat'...",
 CollPositions = open("CollPositions.b1.dat",'r')
 for line in CollPositions:
@@ -28,8 +30,10 @@ for line in CollPositions:
     elif line.strip() == "":
         continue
     ls = line.split()
-    nhits_coll[int(ls[0])]=0
-    pos_coll[int(ls[0])]=float(ls[2])
+    collIdx = int(ls[0])
+    nhits_coll[collIdx]=0
+    pos_coll[collIdx]=float(ls[2])
+    nhitsTurn_coll[collIdx]=np.zeros(lastTurn*2)#make enough room...
 CollPositions.close()
 print "done"
 
@@ -50,8 +54,12 @@ for line in impacts_real:
     if line[0]=="#":
         continue
     ls = line.split()
-    nhits_coll[int(ls[0])] += 1
-    
+    if ls[7] == "4":
+        #skip difractive
+        continue
+    collIdx = int(ls[0])
+    nhits_coll[collIdx] += 1
+    nhitsTurn_coll[collIdx][int(ls[9])]+=1
 #    lidx = lidx+1
 #    if lidx > 1000000:
 #        break
@@ -88,7 +96,7 @@ plt.savefig("plotImpactsLossmap_lossmap.png",dpi=120)
 
 # Losstime PLOT
 plt.figure()
-lastTurn = max(aperLoss["turn"])
+#lastTurn = max(aperLoss["turn"])
 turnBins = np.arange(0.5,lastTurn+1.0,1.0)
 #print turnBins
 plt.hist(aperLoss["turn"],turnBins)
@@ -97,6 +105,38 @@ plt.ylabel("Lost particles/turn")
 if title:
     plt.title(title)
 plt.savefig("plotImpactsLossmap_turn.png",dpi=120)
+
+# Losstime PLOT#2
+plt.figure()
+aperLoss_turn = np.zeros(lastTurn*2)
+for t in aperLoss["turn"]:
+    aperLoss_turn[t]+=1
+timeLoss = np.zeros(lastTurn*2)
+lastLoss = 0
+for i in xrange(len(aperLoss_turn)):
+    timeLoss[i] = aperLoss_turn[i]
+    for ID in nhitsTurn_coll.keys():
+        timeLoss[i] += nhitsTurn_coll[ID][i]
+    if timeLoss[i] > 0:
+        lastLoss = i
+#plt.plot(timeLoss)
+print len(np.arange(0.5,lastTurn*2,1.0)),len(timeLoss)
+plt.bar(np.arange(0.5,lastTurn*2,1.0), timeLoss, 1.0)
+plt.xlim(0,lastLoss+1)
+plt.xlabel("Turn")
+plt.ylabel("Lost particles/turn")
+plt.axvline(8.0,ls="--",color="k") ##Onset of FAILURE
+plt.savefig("plotImpactsLossmap_turn2.png",dpi=120)
+
+# Normalized losstime2 plot
+plt.figure()
+timeLoss_norm = timeLoss/128e6 ### Number of particles tracked
+plt.bar(np.arange(0.5,lastTurn*2,1.0), timeLoss_norm, 1.0)
+plt.xlim(0,lastLoss+1)
+plt.xlabel("Turn")
+plt.ylabel("Fraction of total particles lost/turn")
+plt.axvline(8.0,ls="--",color="red") ##Onset of FAILURE
+plt.savefig("plotImpactsLossmap_turn2_norm.png",dpi=120)
 
 #Correlation losstime/position PLOT
 plt.figure()
