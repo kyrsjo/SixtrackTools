@@ -14,10 +14,16 @@ def processCollScatterFile(fname,getColl):
     cs_ids = set(cs["id"]) # All unique IDs    
     for ID in cs_ids:
         cs_this = cs[cs["id"]==ID]
+        
         first = cs_this["coll"][0]
         last  = cs_this["coll"][-1]
+        lastProcess = cs_this["process"][-1]
         
         if last!=getColl:
+            continue
+        if not (lastProcess==1):
+            print "\t skipped from lastprocess:"
+            print "\t",cs_this
             continue
         
         if first in initial_collimator.keys():
@@ -29,6 +35,7 @@ def processCollScatterFile(fname,getColl):
 
 initialMap = {}
 basePathDir = os.listdir(basePath)
+nValidJobs = 0
 for p1 in basePathDir:
 #for p1 in ["1","2","3"]: #For debugging
     p1_long = os.path.join(basePath,p1)
@@ -50,9 +57,10 @@ for p1 in basePathDir:
         
         collScatterFile = os.path.join(p2_long,"Coll_Scatter_real.dat")
         if not os.path.exists(collScatterFile):
-            print "Empty:", p2
+            print "Empty job:", p2
             continue
         initialMap_this = processCollScatterFile(collScatterFile,collID)
+        nValidJobs += 1
         if len(initialMap_this) == 0:
             continue
         
@@ -67,6 +75,7 @@ print
 nHits = 0
 for col in initialMap.keys():
     print "Collimator",col, "had", initialMap[col], "hits which eventually ended up in collimator", collID
-    nHits = initialMap[col]
+    nHits += initialMap[col]
 print
 print "nHits =", nHits
+print "nValidJobs =", nValidJobs
