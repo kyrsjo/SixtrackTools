@@ -120,7 +120,17 @@ def get_bucket(machine, plot=True, z=0, DELTA=0):
         E0 = 55.00800264e9                 # Beam energy, eV
         bunch = 0.3                        # Bunch longitudinal spread [m]
         limit = 6e-3                       # Energy spread (fractional)
+    elif machine == 'SPS_120':
+        h = 4620                           # RF harmonic number
+        omegaRF = 200.2644e6 * np.pi * 2   # Hz, omegaRF = h*omega0
+        slip = 0.0016855233500965051       #slip=gammatr**-2-gamma**-2
+        V = 3e6                            # V, RF voltage @ collissions
+        phiS = 0.0                         # Radians, synchronous RF phase
+        E0 = 120.0036681e9                 # Beam energy, eV
+        bunch = 0.3                        # Bunch longitudinal spread [m]
+        limit = 6e-3                       # Energy spread (fractional)
 
+        
     else:
         print '>> Please input "HL_coll" or "SPS_inj" as first argument.'
 
@@ -181,10 +191,10 @@ def dist_generator(particles, energy, machine, fort13, jobs, factor, emittance_x
     
     # Generating the Transverse Distribution
     # --------------------------------------------------------------------------------------------------------------
-    x_t  = np.asarray(np.random.normal(0, 1, particles))
-    xp_t = np.asarray(np.random.normal(0, 1, particles))
-    y_t  = np.asarray(np.random.normal(0, 1, particles))
-    yp_t = np.asarray(np.random.normal(0, 1, particles))
+    x_t  = np.asarray(np.random.normal(0, 1, particles))*factor
+    xp_t = np.asarray(np.random.normal(0, 1, particles))*factor
+    y_t  = np.asarray(np.random.normal(0, 1, particles))*factor
+    yp_t = np.asarray(np.random.normal(0, 1, particles))*factor
 
     sigma_x = np.array([[beta_x,alpha_x],[-alpha_x,(1+alpha_x**2)/beta_x]])*emittance_x_geom
     sigma_y = np.array([[beta_y,alpha_y],[-alpha_y,(1+alpha_y**2)/beta_y]])*emittance_y_geom
@@ -195,11 +205,6 @@ def dist_generator(particles, energy, machine, fort13, jobs, factor, emittance_x
     xp = C_x[1,0]*x_t + C_x[1,1]*xp_t
     y  = C_y[0,0]*y_t + C_y[0,1]*yp_t
     yp = C_y[1,0]*y_t + C_y[1,1]*yp_t
-    
-    # x_t  *= factor*tx_max
-    # xp_t *= factor*txp_max
-    # y_t  *= factor*ty_max
-    # yp_t *= factor*typ_max
     
     
     # # Rotating the Transverse Distribution
