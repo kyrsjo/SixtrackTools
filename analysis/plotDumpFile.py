@@ -6,13 +6,13 @@ from mpl_toolkits.mplot3d import Axes3D
 
 import os,sys
 
-plotType = None
 S = 20 #marker size for scatter plots
 LW = None #line width for scatter plots
 DPI = None
 # Produce specific publication plots:
 #plotType="IPACsingleCol_1"
-plotType=None
+plotType = "PRSTAB-CCFAIL"
+#plotType=None
 
 #Courant-Snyder parameters, for CS invariant
 
@@ -49,6 +49,31 @@ elif plotType=="IPACsingleCol_2":
     S = 8
     LW = 0.5
 
+elif plotType == "PRSTAB-CCFAIL":
+    ## Set fontsizes etc.
+    from matplotlib import rcParams,rc
+    rcParams.update({'text.usetex': True}) #slow
+    rc('font',**{'family':'serif','serif':['Times'],'size':9}) # Font size in figure captions
+
+    GOLDEN = (1.0+np.sqrt(5.0))/2.0
+
+    #paperWidth  = 17.0-(2.2+2.0) #cm
+    paperWidth  = 8.5 #cm
+    #paperHeigth = paperWidth/GOLDEN
+    paperHeigth = paperWidth
+
+    FIGSIZE = (paperWidth*0.393700787,(paperHeigth-2.0)*0.393700787);
+    scaleFig = 1
+    FIGSIZE = map(lambda x: x*scaleFig, FIGSIZE)
+    print "FIGSIZE =", FIGSIZE
+
+    DPI=300
+    #CMAP='viridis'
+    CMAP=None
+    ## DONE
+
+
+    
 # fileDType = np.dtype([('ID', np.int), ('turn', np.int),
 #                       ('s', np.float),('x', np.float),('xp', np.float),('z', np.float),
 #                       ('y', np.float),('yp', np.float),('dEE', np.float),
@@ -182,12 +207,12 @@ if len(sys.argv) == 1:
     print "Usage: python plotDumpFile dumpfile (maxturn)"
     exit(1)
 
-if not os.path.isdir("pngs"):
-    if os.path.exists("pngs"):
+if not os.path.isdir("pngs-"+sys.argv[1]):
+    if os.path.exists("pngs-"+sys.argv[1]):
         print "Path 'pngs' exists but is not a folder - aborting!"
         exit(1)
-    print "Creating folder 'pngs'"
-    os.mkdir("pngs")
+    print "Creating folder 'pngs-"+sys.argv[1]+"'"
+    os.mkdir("pngs-"+sys.argv[1])
 
 (fdata,turnIdxs) = readdumpfile(sys.argv[1])
 if len(sys.argv) == 3:
@@ -229,8 +254,10 @@ while True:
     corrX.append(np.corrcoef(tdata['z'], tdata['x'])[0,1])    
     corrY.append(np.corrcoef(tdata['z'], tdata['y'])[0,1])    
     
-    angX.append( np.arctan(np.polyfit(tdata['z'], tdata['x'],1)[0]) )
-    angY.append( np.arctan(np.polyfit(tdata['z'], tdata['y'],1)[0]) )
+    #angX.append( np.arctan(np.polyfit(tdata['z'], tdata['x'],1)[0]) )
+    angX.append( 0.0 )
+    #angY.append( np.arctan(np.polyfit(tdata['z'], tdata['y'],1)[0]) )
+    angY.append( 0.0 )
     
     meanX.append( np.mean(tdata['x']) )
     meanY.append( np.mean(tdata['y']) )
@@ -305,7 +332,7 @@ while True:
             for a in fig_zy.axes[:-1]:
                 a.get_yticklabels()[0].set(alpha=0.0)
             
-            fig_zy.savefig("pngs/zy_multi.png",dpi=DPI)
+            fig_zy.savefig("pngs-"+sys.argv[1]+"/zy_multi.png",dpi=DPI)
     
     # continue #Skip following plots for speed
 
@@ -317,7 +344,7 @@ while True:
     plt.xlim(min(fdata[:]['z']),max(fdata[:]['z']))
     plt.ylim(min(fdata[:]['x']),max(fdata[:]['x']))
 
-    plt.savefig("pngs/zx_%05i.png" % (t))
+    plt.savefig("pngs-"+sys.argv[1]+"/zx_%05i.png" % (t))
 
     plt.clf()
     plt.title("TURN =" + str(t))
@@ -327,8 +354,24 @@ while True:
     plt.xlim(min(fdata[:]['z']),max(fdata[:]['z']))
     plt.ylim(min(fdata[:]['y']),max(fdata[:]['y']))
 
-    plt.savefig("pngs/zy_%05i.png" % (t),dpi=DPI)
-
+    plt.savefig("pngs-"+sys.argv[1]+"/zy_%05i.png" % (t),dpi=DPI)
+    if plotType == "PRSTAB-CCFAIL":
+        plt.figure(9,figsize=FIGSIZE,dpi=DPI)
+        plt.clf()
+        plt.title("TURN = " + str(t-20))
+        plt.scatter(tdata['z'], tdata['y'], c=tdata['ID'],cmap='rainbow',s=8,linewidths=0.5)
+        plt.xlabel("$z$ [mm]")
+        plt.ylabel("$y$ [mm]")
+        plt.xlim(min(fdata[:]['z']),max(fdata[:]['z']))
+        plt.ylim(min(fdata[:]['y']),max(fdata[:]['y']))
+        plt.subplots_adjust(left=0.14,bottom=0.14,right=0.99,top=0.90)
+        
+        #plt.show()
+        
+        plt.savefig("pngs-"+sys.argv[1]+"/zy-PRSTAB_%05i.png" % (t))
+        plt.savefig("pngs-"+sys.argv[1]+"/zy-PRSTAB_%05i.pdf" % (t))
+        
+        plt.figure(5)
 
     plt.clf()
     plt.title("TURN =" + str(t))
@@ -338,7 +381,7 @@ while True:
     plt.xlim(min(fdata[:]['x']),max(fdata[:]['x']))
     plt.ylim(min(fdata[:]['y']),max(fdata[:]['y']))
     
-    plt.savefig("pngs/xy_%05i.png" % (t))
+    plt.savefig("pngs-"+sys.argv[1]+"/xy_%05i.png" % (t))
 
     plt.clf()
     plt.title("TURN =" + str(t))
@@ -348,7 +391,7 @@ while True:
     plt.xlim(min(fdata[:]['x']),max(fdata[:]['x']))
     plt.ylim(min(fdata[:]['xp']),max(fdata[:]['xp']))
     
-    plt.savefig("pngs/xxp_%05i.png" % (t))
+    plt.savefig("pngs-"+sys.argv[1]+"/xxp_%05i.png" % (t))
 
     plt.clf()
     plt.title("TURN =" + str(t))
@@ -358,7 +401,7 @@ while True:
     plt.xlim(min(fdata[:]['y']),max(fdata[:]['y']))
     plt.ylim(min(fdata[:]['yp']),max(fdata[:]['yp']))
     
-    plt.savefig("pngs/yyp_%05i.png" % (t))
+    plt.savefig("pngs-"+sys.argv[1]+"/yyp_%05i.png" % (t))
 
     plt.clf()
     plt.title("TURN =" + str(t))
@@ -368,13 +411,54 @@ while True:
     plt.xlim(min(fdata[:]['z']),max(fdata[:]['z']))
     plt.ylim(min(fdata[:]['dEE']),max(fdata[:]['dEE']))
     
-    plt.savefig("pngs/zdEE_%05i.png" % (t))
+    plt.savefig("pngs-"+sys.argv[1]+"/zdEE_%05i.png" % (t))
 
+    plt.clf()
+    plt.title("TURN = " + str(t))
+    plt.scatter(tdata['dEE'], tdata['x'], c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
+    plt.xlabel("dE/E")
+    plt.ylabel("x [mm]")
+    plt.xlim(min(fdata[:]['dEE']),max(fdata[:]['dEE']))
+    plt.ylim(min(fdata[:]['x']),max(fdata[:]['x']))
+    
+    plt.savefig("pngs-"+sys.argv[1]+"/dEEx_%05i.png" % (t))
+
+    plt.clf()
+    plt.title("TURN = " + str(t))
+    plt.scatter(tdata['dEE'], tdata['y'], c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
+    plt.xlabel("dE/E")
+    plt.ylabel("y [mm]")
+    plt.xlim(min(fdata[:]['dEE']),max(fdata[:]['dEE']))
+    plt.ylim(min(fdata[:]['y']),max(fdata[:]['y']))
+    
+    plt.savefig("pngs-"+sys.argv[1]+"/dEEy_%05i.png" % (t))
+
+    plt.clf()
+    plt.title("TURN = " + str(t))
+    plt.scatter(tdata['dEE'], tdata['xp'], c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
+    plt.xlabel("dE/E")
+    plt.ylabel("xp [mm]")
+    plt.xlim(min(fdata[:]['dEE']),max(fdata[:]['dEE']))
+    plt.ylim(min(fdata[:]['xp']),max(fdata[:]['xp']))
+    
+    plt.savefig("pngs-"+sys.argv[1]+"/dEExp_%05i.png" % (t))
+
+    plt.clf()
+    plt.title("TURN = " + str(t))
+    plt.scatter(tdata['dEE'], tdata['yp'], c=tdata['ID'],cmap='rainbow',s=S,linewidths=LW)
+    plt.xlabel("dE/E")
+    plt.ylabel("yp")
+    plt.xlim(min(fdata[:]['dEE']),max(fdata[:]['dEE']))
+    plt.ylim(min(fdata[:]['yp']),max(fdata[:]['yp']))
+    
+    plt.savefig("pngs-"+sys.argv[1]+"/dEEyp_%05i.png" % (t))
+
+    
     plt.clf()
     plt.title("TURN =" + str(t))
     plt.hist(CSinv_y*1e6,50,range=(0,0.05))
     plt.xlabel("Courant-Snyder invariant (y) [mm*mrad]")
-    plt.savefig("pngs/CSinv_%05i.png" % (t))
+    plt.savefig("pngs-"+sys.argv[1]+"/CSinv_%05i.png" % (t))
 
     #plt.show()
 
@@ -391,51 +475,90 @@ while True:
     # plt.ylabel("y [mm]")
     # ax.set_zlabel("z [mm]")
     
-    # plt.savefig("pngs/xyz_%05i.png" % (t))
-
-    fig = plt.figure(10)
-    ax = fig.add_subplot(111, projection='3d')
-
-    #ax.scatter(tdata['y'], tdata['yp'], tdata['z'],zorder=0)
-    ax.scatter(tdata['y'], tdata['yp'], zdir='z',zs=min(fdata[:]['z']),zorder=1, c=tdata['ID'],cmap="rainbow")
-    ax.scatter(tdata['y'], tdata['z'], zdir='y',zs=max(fdata[:]['yp']),zorder=1, c=tdata['ID'],cmap="rainbow")
-    ax.scatter(tdata['yp'], tdata['z'], zdir='x',zs=min(fdata[:]['y']),zorder=1, c=tdata['ID'],cmap="rainbow")
-
-    ax.set_xlim(min(fdata[:]['y']),max(fdata[:]['y']))
-    ax.set_ylim(min(fdata[:]['yp']),max(fdata[:]['yp']))
-    ax.set_zlim(min(fdata[:]['z']),max(fdata[:]['z']))
-    ax.set_title("TURN =" + str(t))
-    plt.xlabel("y [mm]")
-    plt.ylabel("yp [mrad]")
-    ax.set_zlabel("z [mm]")
+    # plt.savefig("pngs-"+sys.argv[1]+"/xyz_%05i.png" % (t))
     
-    plt.savefig("pngs/yypz_%05i.png" % (t))
+    
+    
+    # fig = plt.figure(10)
+    # ax = fig.add_subplot(111, projection='3d')
+
+    # #ax.scatter(tdata['y'], tdata['yp'], tdata['z'],zorder=0)
+    # ax.scatter(tdata['y'], tdata['yp'], zdir='z',zs=min(fdata[:]['z']),zorder=1, c=tdata['ID'],cmap="rainbow")
+    # ax.scatter(tdata['y'], tdata['z'], zdir='y',zs=max(fdata[:]['yp']),zorder=1, c=tdata['ID'],cmap="rainbow")
+    # ax.scatter(tdata['yp'], tdata['z'], zdir='x',zs=min(fdata[:]['y']),zorder=1, c=tdata['ID'],cmap="rainbow")
+
+    # ax.set_xlim(min(fdata[:]['y']),max(fdata[:]['y']))
+    # ax.set_ylim(min(fdata[:]['yp']),max(fdata[:]['yp']))
+    # ax.set_zlim(min(fdata[:]['z']),max(fdata[:]['z']))
+    # ax.set_title("TURN =" + str(t))
+    # plt.xlabel("y [mm]")
+    # plt.ylabel("yp [mrad]")
+    # ax.set_zlabel("z [mm]")
+    
+    # plt.savefig("pngs-"+sys.argv[1]+"/yypz_%05i.png" % (t))
+    
+    
+    
+    # fig = plt.figure(10)
+    # ax = fig.add_subplot(111, projection='3d')
+
+    # ax.scatter(tdata['x'], tdata['xp'], tdata['z'],zorder=0)
+
+    # ax.set_xlim(min(fdata[:]['x']),max(fdata[:]['x']))
+    # ax.set_ylim(min(fdata[:]['xp']),max(fdata[:]['xp']))
+    # ax.set_zlim(min(fdata[:]['z']),max(fdata[:]['z']))
+    # ax.set_title("TURN =" + str(t))
+    # plt.xlabel("x [mm]")
+    # plt.ylabel("xp [mrad]")
+    # ax.set_zlabel("z [mm]")
+    
+    # plt.savefig("pngs-"+sys.argv[1]+"/xxpz_%05i.png" % (t))
+
+    
+    # fig = plt.figure(10)
+    # ax = fig.add_subplot(111, projection='3d')
+
+    # ax.scatter(tdata['x'], tdata['dEE'], tdata['z'],zorder=0)
+    # # ax.scatter(tdata['y'], tdata['yp'], zdir='z',zs=min(fdata[:]['z']),zorder=1, c=tdata['ID'],cmap="rainbow")
+    # # ax.scatter(tdata['y'], tdata['z'], zdir='y',zs=max(fdata[:]['yp']),zorder=1, c=tdata['ID'],cmap="rainbow")
+    # # ax.scatter(tdata['yp'], tdata['z'], zdir='x',zs=min(fdata[:]['y']),zorder=1, c=tdata['ID'],cmap="rainbow")
+
+    # ax.set_xlim(min(fdata[:]['x']),max(fdata[:]['x']))
+    # ax.set_ylim(min(fdata[:]['dEE']),max(fdata[:]['dEE']))
+    # ax.set_zlim(min(fdata[:]['z']),max(fdata[:]['z']))
+    # ax.set_title("TURN =" + str(t))
+    # plt.xlabel("x [mm]")
+    # plt.ylabel("dEE")
+    # ax.set_zlabel("z [mm]")
+    
+    # plt.savefig("pngs-"+sys.argv[1]+"/xdEEz_%05i.png" % (t))
+    
     #plt.show()
 
 fps = 10
 
 print "Making gifs:"
 
-movieFileName = "pngs/xy.gif"
-command = "convert " + "pngs/xy_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
+movieFileName = "pngs-"+sys.argv[1]+"/xy.gif"
+command = "convert " + "pngs-"+sys.argv[1]+"/xy_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
 print "Command = '" + command + "'"
 #os.system(command)
 print "Done."
 
-movieFileName = "pngs/zx.gif"
-command = "convert " + "pngs/zx_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
+movieFileName = "pngs-"+sys.argv[1]+"/zx.gif"
+command = "convert " + "pngs-"+sys.argv[1]+"/zx_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
 print "Command = '" + command + "'"
 #os.system(command)
 print "Done."
 
-movieFileName = "pngs/zy.gif"
-command = "convert " + "pngs/zy_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
+movieFileName = "pngs-"+sys.argv[1]+"/zy.gif"
+command = "convert " + "pngs-"+sys.argv[1]+"/zy_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
 print "Command = '" + command + "'"
 #os.system(command)
 print "Done."
 
-movieFileName = "pngs/zdEE.gif"
-command = "convert " + "pngs/zdEE_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
+movieFileName = "pngs-"+sys.argv[1]+"/zdEE.gif"
+command = "convert " + "pngs-"+sys.argv[1]+"/zdEE_*.png -layers Optimize -delay " + str(100/fps) + " " + movieFileName
 print "Command = '" + command + "'"
 #os.system(command)
 print "Done."
