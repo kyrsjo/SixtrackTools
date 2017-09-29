@@ -355,6 +355,7 @@ while True:
     plt.ylim(min(fdata[:]['y']),max(fdata[:]['y']))
 
     plt.savefig("pngs-"+sys.argv[1]+"/zy_%05i.png" % (t),dpi=DPI)
+    
     if plotType == "PRSTAB-CCFAIL":
         plt.figure(9,figsize=FIGSIZE,dpi=DPI)
         plt.clf()
@@ -368,7 +369,7 @@ while True:
         
         #plt.show()
         
-        plt.savefig("pngs-"+sys.argv[1]+"/zy-PRSTAB_%05i.png" % (t))
+        plt.savefig("pngs-"+sys.argv[1]+"/zy-PRSTAB_%05i.png" % (t),dpi=600)
         plt.savefig("pngs-"+sys.argv[1]+"/zy-PRSTAB_%05i.pdf" % (t))
         
         plt.figure(5)
