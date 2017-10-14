@@ -196,8 +196,8 @@ def dist_generator(particles, energy, machine, fort13, jobs, factor, emittance_x
     y_t  = np.asarray(np.random.normal(0, 1, particles))*factor
     yp_t = np.asarray(np.random.normal(0, 1, particles))*factor
 
-    sigma_x = np.array([[beta_x,alpha_x],[-alpha_x,(1+alpha_x**2)/beta_x]])*emittance_x_geom
-    sigma_y = np.array([[beta_y,alpha_y],[-alpha_y,(1+alpha_y**2)/beta_y]])*emittance_y_geom
+    sigma_x = np.array([[beta_x,-alpha_x],[-alpha_x,(1+alpha_x**2)/beta_x]])*emittance_x_geom
+    sigma_y = np.array([[beta_y,-alpha_y],[-alpha_y,(1+alpha_y**2)/beta_y]])*emittance_y_geom
     C_x = np.linalg.cholesky(sigma_x)
     C_y = np.linalg.cholesky(sigma_y)
     
